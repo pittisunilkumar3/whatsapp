@@ -18,6 +18,8 @@ const superAdminRoutes = require('./src/routes/superAdminRoutes');
 const superAdminSidebarMenuRoutes = require('./src/routes/superAdminSidebarMenuRoutes');
 const superAdminSidebarSubMenuRoutes = require('./src/routes/superAdminSidebarSubMenuRoutes');
 const superAdminSidebarCombinedRoutes = require('./src/routes/superadminSidebarCombinedRoutes');
+const superAdminEmailConfigRoutes = require('./src/routes/superAdminEmailConfigRoutes');
+
 
 
 
@@ -53,6 +55,7 @@ app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/superadmin-sidebar-menus', superAdminSidebarMenuRoutes);
 app.use('/api/superadmin-sidebar-sub-menus', superAdminSidebarSubMenuRoutes);
 app.use('/api/superadmin-sidebar', superAdminSidebarCombinedRoutes);
+app.use('/api/superadmin/email-config', superAdminEmailConfigRoutes);
 console.log('API routes setup completed');
 
 // Test API endpoint

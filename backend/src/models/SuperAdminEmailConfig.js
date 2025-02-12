@@ -1,71 +1,32 @@
 const db = require('../../db');
 
 class SuperAdminEmailConfig {
-	static async getAll() {
-		const query = 'SELECT * FROM superadmin_email_config';
-		const [configs] = await db.query(query);
-		return configs;
-	}
-
-	static async getById(id) {
-		const query = 'SELECT * FROM superadmin_email_config WHERE id = ?';
-		const [config] = await db.query(query, [id]);
-		return config[0];
-	}
-
 	static async create(configData) {
 		const query = `
-			INSERT INTO superadmin_email_config 
-			(email_type, smtp_server, smtp_port, smtp_username, smtp_password, 
-			ssl_tls, smtp_auth, api_key, api_secret, region, is_active) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO superadmin_email_config SET ?
 		`;
-		const [result] = await db.query(query, [
-			configData.email_type,
-			configData.smtp_server,
-			configData.smtp_port,
-			configData.smtp_username,
-			configData.smtp_password,
-			configData.ssl_tls,
-			configData.smtp_auth,
-			configData.api_key,
-			configData.api_secret,
-			configData.region,
-			configData.is_active || 'no'
-		]);
-		return result.insertId;
+		return db.query(query, [configData]);
+	}
+
+	static async findById(id) {
+		return db.query('SELECT * FROM superadmin_email_config WHERE id = ?', [id]);
+	}
+
+	static async findAll() {
+		return db.query('SELECT * FROM superadmin_email_config');
 	}
 
 	static async update(id, configData) {
 		const query = `
 			UPDATE superadmin_email_config 
-			SET email_type = ?, smtp_server = ?, smtp_port = ?, 
-				smtp_username = ?, smtp_password = ?, ssl_tls = ?, 
-				smtp_auth = ?, api_key = ?, api_secret = ?, 
-				region = ?, is_active = ?
+			SET ?, updated_at = CURRENT_TIMESTAMP
 			WHERE id = ?
 		`;
-		const [result] = await db.query(query, [
-			configData.email_type,
-			configData.smtp_server,
-			configData.smtp_port,
-			configData.smtp_username,
-			configData.smtp_password,
-			configData.ssl_tls,
-			configData.smtp_auth,
-			configData.api_key,
-			configData.api_secret,
-			configData.region,
-			configData.is_active,
-			id
-		]);
-		return result.affectedRows > 0;
+		return db.query(query, [configData, id]);
 	}
 
 	static async delete(id) {
-		const query = 'DELETE FROM superadmin_email_config WHERE id = ?';
-		const [result] = await db.query(query, [id]);
-		return result.affectedRows > 0;
+		return db.query('DELETE FROM superadmin_email_config WHERE id = ?', [id]);
 	}
 }
 

@@ -2,64 +2,102 @@ const express = require('express');
 const router = express.Router();
 const SuperAdminEmailConfig = require('../models/SuperAdminEmailConfig');
 
-// Get all email configs
+// Get all email configurations
 router.get('/', async (req, res) => {
 	try {
-		const configs = await SuperAdminEmailConfig.getAll();
-		res.json(configs);
+		const [configs] = await SuperAdminEmailConfig.findAll();
+		res.json({
+			success: true,
+			data: configs
+		});
 	} catch (error) {
-		res.status(500).json({ message: 'Error fetching email configs', error: error.message });
+		res.status(500).json({
+			success: false,
+			message: error.message
+		});
 	}
 });
 
-// Get email config by ID
+// Get email configuration by ID
 router.get('/:id', async (req, res) => {
 	try {
-		const config = await SuperAdminEmailConfig.getById(req.params.id);
-		if (!config) {
-			return res.status(404).json({ message: 'Email config not found' });
+		const [config] = await SuperAdminEmailConfig.findById(req.params.id);
+		if (!config || config.length === 0) {
+			return res.status(404).json({
+				success: false,
+				message: 'Email configuration not found'
+			});
 		}
-		res.json(config);
+		res.json({
+			success: true,
+			data: config[0]
+		});
 	} catch (error) {
-		res.status(500).json({ message: 'Error fetching email config', error: error.message });
+		res.status(500).json({
+			success: false,
+			message: error.message
+		});
 	}
 });
 
-// Create new email config
+// Create new email configuration
 router.post('/', async (req, res) => {
 	try {
-		const configId = await SuperAdminEmailConfig.create(req.body);
-		const newConfig = await SuperAdminEmailConfig.getById(configId);
-		res.status(201).json(newConfig);
+		const [result] = await SuperAdminEmailConfig.create(req.body);
+		res.status(201).json({
+			success: true,
+			message: 'Email configuration created successfully',
+			data: { id: result.insertId }
+		});
 	} catch (error) {
-		res.status(500).json({ message: 'Error creating email config', error: error.message });
+		res.status(400).json({
+			success: false,
+			message: error.message
+		});
 	}
 });
 
-// Update email config
+// Update email configuration
 router.put('/:id', async (req, res) => {
 	try {
-		const success = await SuperAdminEmailConfig.update(req.params.id, req.body);
-		if (!success) {
-			return res.status(404).json({ message: 'Email config not found' });
+		const [result] = await SuperAdminEmailConfig.update(req.params.id, req.body);
+		if (result.affectedRows === 0) {
+			return res.status(404).json({
+				success: false,
+				message: 'Email configuration not found'
+			});
 		}
-		const updatedConfig = await SuperAdminEmailConfig.getById(req.params.id);
-		res.json(updatedConfig);
+		res.json({
+			success: true,
+			message: 'Email configuration updated successfully'
+		});
 	} catch (error) {
-		res.status(500).json({ message: 'Error updating email config', error: error.message });
+		res.status(400).json({
+			success: false,
+			message: error.message
+		});
 	}
 });
 
-// Delete email config
+// Delete email configuration
 router.delete('/:id', async (req, res) => {
 	try {
-		const success = await SuperAdminEmailConfig.delete(req.params.id);
-		if (!success) {
-			return res.status(404).json({ message: 'Email config not found' });
+		const [result] = await SuperAdminEmailConfig.delete(req.params.id);
+		if (result.affectedRows === 0) {
+			return res.status(404).json({
+				success: false,
+				message: 'Email configuration not found'
+			});
 		}
-		res.json({ message: 'Email config deleted successfully' });
+		res.json({
+			success: true,
+			message: 'Email configuration deleted successfully'
+		});
 	} catch (error) {
-		res.status(500).json({ message: 'Error deleting email config', error: error.message });
+		res.status(500).json({
+			success: false,
+			message: error.message
+		});
 	}
 });
 
