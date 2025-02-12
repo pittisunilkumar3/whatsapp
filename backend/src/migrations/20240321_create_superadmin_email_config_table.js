@@ -1,4 +1,4 @@
-const db = require('../db');
+const db = require('../../db');
 
 module.exports = {
 	async up() {
@@ -6,7 +6,7 @@ module.exports = {
 			console.log('Creating superadmin_email_config table...');
 			await db.query(`
 				CREATE TABLE IF NOT EXISTS superadmin_email_config (
-					id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+					id INT AUTO_INCREMENT PRIMARY KEY,
 					email_type VARCHAR(100) NULL,
 					smtp_server VARCHAR(100) NULL,
 					smtp_port VARCHAR(100) NULL,
@@ -31,9 +31,7 @@ module.exports = {
 	async down() {
 		try {
 			console.log('Dropping superadmin_email_config table...');
-			await db.query('SET FOREIGN_KEY_CHECKS = 0');
 			await db.query('DROP TABLE IF EXISTS superadmin_email_config');
-			await db.query('SET FOREIGN_KEY_CHECKS = 1');
 			console.log('superadmin_email_config table dropped successfully');
 		} catch (error) {
 			console.error('Error dropping superadmin_email_config table:', error);

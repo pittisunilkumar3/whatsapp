@@ -6,8 +6,8 @@ module.exports = {
 			console.log('Creating email_config table...');
 			await db.query(`
 				CREATE TABLE IF NOT EXISTS email_config (
-					id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-					company_id INT UNSIGNED NOT NULL,
+					id INT AUTO_INCREMENT PRIMARY KEY,
+					company_id INT NOT NULL,
 					email_type VARCHAR(100) NULL,
 					smtp_server VARCHAR(100) NULL,
 					smtp_port VARCHAR(100) NULL,
@@ -20,7 +20,7 @@ module.exports = {
 					region VARCHAR(255) NULL,
 					is_active VARCHAR(10) NOT NULL DEFAULT 'no',
 					created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-					FOREIGN KEY (company_id) REFERENCES companies(id)
+					CONSTRAINT fk_email_config_company FOREIGN KEY (company_id) REFERENCES companies(id)
 				)
 			`);
 			console.log('email_config table created successfully');
