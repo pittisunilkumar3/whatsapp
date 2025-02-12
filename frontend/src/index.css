@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--scrollbar-track: #F0F0F0;
+		--scrollbar-thumb: #075E54;
+	}
+
+	html {
+		scroll-behavior: smooth;
+	}
+
+	body {
+		@apply bg-secondary-gray text-primary-text antialiased min-h-screen;
+	}
+
+	#root {
+		@apply min-h-screen flex flex-col;
+	}
+
+	/* Scrollbar Styles */
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+
+	::-webkit-scrollbar-track {
+		background: var(--scrollbar-track);
+	}
+
+	::-webkit-scrollbar-thumb {
+		background: var(--scrollbar-thumb);
+		border-radius: 4px;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background: #064942;
+	}
+}
+
+@layer components {
+	/* Glassmorphism */
+	.glass {
+		@apply backdrop-blur-[10px] bg-white/70 border border-white/30 shadow-glass;
+	}
+
+	/* Neon Effects */
+	.neon-glow {
+		@apply shadow-neon shadow-neon-green;
+	}
+
+	.neon-text {
+		@apply text-neon-green;
+	}
+
+	@keyframes pulse-neon {
+		to {
+			opacity: 0.6;
+		}
+	}
+
+	.pulse-neon {
+		animation: pulse-neon 2s infinite alternate;
+	}
+}
+
+@layer utilities {
+	/* Parallax Scrolling */
+	.parallax {
+		@apply will-change-transform;
+		transform: translateY(calc(var(--scrollTop) * var(--parallax-speed)));
+	}
+
+	.parallax-bg {
+		--parallax-speed: 0.1;
+	}
+
+	.parallax-mid {
+		--parallax-speed: 0.2;
+	}
+
+	.parallax-content {
+		--parallax-speed: 1;
+	}
+}

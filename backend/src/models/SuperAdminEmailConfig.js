@@ -1,0 +1,72 @@
+const db = require('../../db');
+
+class SuperAdminEmailConfig {
+	static async getAll() {
+		const query = 'SELECT * FROM superadmin_email_config';
+		const [configs] = await db.query(query);
+		return configs;
+	}
+
+	static async getById(id) {
+		const query = 'SELECT * FROM superadmin_email_config WHERE id = ?';
+		const [config] = await db.query(query, [id]);
+		return config[0];
+	}
+
+	static async create(configData) {
+		const query = `
+			INSERT INTO superadmin_email_config 
+			(email_type, smtp_server, smtp_port, smtp_username, smtp_password, 
+			ssl_tls, smtp_auth, api_key, api_secret, region, is_active) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`;
+		const [result] = await db.query(query, [
+			configData.email_type,
+			configData.smtp_server,
+			configData.smtp_port,
+			configData.smtp_username,
+			configData.smtp_password,
+			configData.ssl_tls,
+			configData.smtp_auth,
+			configData.api_key,
+			configData.api_secret,
+			configData.region,
+			configData.is_active || 'no'
+		]);
+		return result.insertId;
+	}
+
+	static async update(id, configData) {
+		const query = `
+			UPDATE superadmin_email_config 
+			SET email_type = ?, smtp_server = ?, smtp_port = ?, 
+				smtp_username = ?, smtp_password = ?, ssl_tls = ?, 
+				smtp_auth = ?, api_key = ?, api_secret = ?, 
+				region = ?, is_active = ?
+			WHERE id = ?
+		`;
+		const [result] = await db.query(query, [
+			configData.email_type,
+			configData.smtp_server,
+			configData.smtp_port,
+			configData.smtp_username,
+			configData.smtp_password,
+			configData.ssl_tls,
+			configData.smtp_auth,
+			configData.api_key,
+			configData.api_secret,
+			configData.region,
+			configData.is_active,
+			id
+		]);
+		return result.affectedRows > 0;
+	}
+
+	static async delete(id) {
+		const query = 'DELETE FROM superadmin_email_config WHERE id = ?';
+		const [result] = await db.query(query, [id]);
+		return result.affectedRows > 0;
+	}
+}
+
+module.exports = SuperAdminEmailConfig;

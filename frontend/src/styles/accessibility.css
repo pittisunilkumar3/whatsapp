@@ -1,0 +1,131 @@
+/* WCAG 2.1 Level AA Compliance Styles */
+
+/* Focus Styles */
+*:focus-visible {
+	outline: 3px solid #2196F3;
+	outline-offset: 2px;
+}
+
+/* High Contrast Theme */
+.high-contrast {
+	--text-primary: #000000;
+	--text-secondary: #1a1a1a;
+	--background-primary: #ffffff;
+	--background-secondary: #f0f0f0;
+	--border-color: #000000;
+	--focus-color: #000000;
+	
+	/* WhatsApp Colors High Contrast */
+	--whatsapp-green: #006400;
+	--light-whatsapp-green: #008000;
+	
+	/* Status Colors High Contrast */
+	--status-active: #006400;
+	--status-inactive: #1a1a1a;
+	--status-warning: #b35900;
+	--status-error: #cc0000;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+/* Text Spacing */
+.improved-readability {
+	line-height: 1.5;
+	letter-spacing: 0.12em;
+	word-spacing: 0.16em;
+}
+
+/* Skip Links */
+.skip-link {
+	position: absolute;
+	top: -40px;
+	left: 0;
+	background: #000000;
+	color: #ffffff;
+	padding: 8px;
+	z-index: 100;
+}
+
+.skip-link:focus {
+	top: 0;
+}
+
+/* ARIA Support */
+[aria-hidden="true"] {
+	display: none !important;
+}
+
+[role="alert"] {
+	border: 2px solid currentColor;
+	padding: 0.5em;
+	margin: 0.5em 0;
+}
+
+/* Screen Reader Only */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Keyboard Navigation */
+[tabindex]:not([tabindex="-1"]):focus {
+	outline: 3px solid #2196F3;
+	outline-offset: 2px;
+}
+
+/* Color Contrast */
+.high-contrast {
+	--link-color: #0000EE;
+	--link-visited: #551A8B;
+	--error-color: #CC0000;
+	--success-color: #006400;
+	--info-color: #0000CC;
+	--warning-color: #CC6600;
+}
+
+/* Form Elements */
+input, select, textarea {
+	font-size: 1rem;
+	padding: 0.5em;
+	border: 2px solid var(--border-color, #333);
+}
+
+/* Error States */
+.error-message {
+	color: var(--error-color, #CC0000);
+	font-weight: bold;
+	padding: 0.5em;
+	margin-top: 0.5em;
+}
+
+/* Loading States */
+.loading {
+	position: relative;
+}
+
+.loading::after {
+	content: "Loading...";
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+
+[aria-busy="true"] {
+	cursor: wait;
+}
