@@ -20,6 +20,12 @@ const superAdminSidebarSubMenuRoutes = require('./src/routes/superAdminSidebarSu
 const superAdminSidebarCombinedRoutes = require('./src/routes/superadminSidebarCombinedRoutes');
 const superAdminEmailConfigRoutes = require('./src/routes/superAdminEmailConfigRoutes');
 
+const callCampaignRoutes = require('./src/callagent/routes/callCampaignRoutes');
+const callAgentRoutes = require('./src/callagent/routes/callAgentRoutes');
+const callLeadRoutes = require('./src/callagent/routes/callLeadRoutes');
+const callRoutes = require('./src/callagent/routes/callRoutes');
+const callReportRoutes = require('./src/callagent/routes/callReportRoutes');
+
 
 
 
@@ -56,6 +62,12 @@ app.use('/api/superadmin-sidebar-menus', superAdminSidebarMenuRoutes);
 app.use('/api/superadmin-sidebar-sub-menus', superAdminSidebarSubMenuRoutes);
 app.use('/api/superadmin-sidebar', superAdminSidebarCombinedRoutes);
 app.use('/api/superadmin/email-config', superAdminEmailConfigRoutes);
+
+app.use('/api/callagent/campaigns', callCampaignRoutes);
+app.use('/api/callagent/agents', callAgentRoutes);
+app.use('/api/callagent/leads', callLeadRoutes);
+app.use('/api/callagent/calls', callRoutes);
+app.use('/api/callagent/reports', callReportRoutes);
 console.log('API routes setup completed');
 
 // Test API endpoint
