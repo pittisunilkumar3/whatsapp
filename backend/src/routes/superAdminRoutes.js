@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const SuperAdmin = require('../models/SuperAdmin');
 
 // Login endpoint
@@ -23,10 +24,18 @@ router.post('/login', async (req, res) => {
 		// Remove sensitive data before sending response
 		const { password_hash, ...superadminData } = superadmin;
 		
+		// Generate JWT token with 3-hour expiration
+		const token = jwt.sign(
+			{ id: superadmin.id, email: superadmin.email },
+			process.env.JWT_SECRET,
+			{ expiresIn: '3h' }
+		);
+		
 		res.json({
 			success: true,
 			message: 'Login successful',
-			data: superadminData
+			data: superadminData,
+			token
 		});
 	} catch (error) {
 		console.error('Error during login:', error);

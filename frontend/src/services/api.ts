@@ -1,3 +1,23 @@
+import axios from 'axios';
+
+const api = axios.create({
+	baseURL: import.meta.env.VITE_API_BASE_URL
+});
+
+// Add request interceptor to include token
+api.interceptors.request.use(
+	(config) => {
+		const token = localStorage.getItem('token');
+		if (token) {
+			config.headers.Authorization = `Bearer ${token}`;
+		}
+		return config;
+	},
+	(error) => {
+		return Promise.reject(error);
+	}
+);
+
 interface EmployeeLoginResponse {
 	message: string;
 	data: {
@@ -37,6 +57,7 @@ interface LoginResponse {
 		two_factor_secret: null | string;
 		two_factor_enabled: number;
 	};
+	token: string;
 }
 
 interface CompanyLoginResponse {
@@ -79,26 +100,10 @@ interface CompanyLoginResponse {
 export const apiService = {
 	superAdminLogin: async (email: string, password: string): Promise<LoginResponse> => {
 		console.log('Attempting super admin login...');
-		
 		try {
-			const response = await fetch('/api/superadmin/login', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Accept': 'application/json'
-				},
-				body: JSON.stringify({ email, password }),
-			});
+			const response = await api.post('/api/superadmin/login', { email, password });
+			return response.data;
 
-			const data = await response.json();
-			
-			if (!response.ok) {
-				console.error('Login failed:', data);
-				throw new Error(data.message || 'Login failed');
-			}
-
-			console.log('Login response:', data);
-			return data;
 		} catch (error) {
 			console.error('API call error:', error);
 			throw error instanceof Error ? error : new Error('Network error occurred');
@@ -107,22 +112,9 @@ export const apiService = {
 
 	companyLogin: async (username: string, password: string): Promise<CompanyLoginResponse> => {
 		try {
-			const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/companies/login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Accept': 'application/json'
-				},
-				body: JSON.stringify({ username, password }),
-			});
+			const response = await api.post('/api/companies/login', { username, password });
+			return response.data;
 
-			const data = await response.json();
-			
-			if (!response.ok) {
-				throw new Error(data.message || 'Login failed');
-			}
-
-			return data;
 		} catch (error) {
 			console.error('Company login error:', error);
 			throw error instanceof Error ? error : new Error('Network error occurred');
@@ -131,22 +123,9 @@ export const apiService = {
 
 	employeeLogin: async (email: string, password: string): Promise<EmployeeLoginResponse> => {
 		try {
-			const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/company-employees/login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Accept': 'application/json'
-				},
-				body: JSON.stringify({ email, password }),
-			});
+			const response = await api.post('/api/company-employees/login', { email, password });
+			return response.data;
 
-			const data = await response.json();
-			
-			if (!response.ok) {
-				throw new Error(data.message || 'Login failed');
-			}
-
-			return data;
 		} catch (error) {
 			console.error('Employee login error:', error);
 			throw error instanceof Error ? error : new Error('Network error occurred');
