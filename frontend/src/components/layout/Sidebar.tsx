@@ -121,33 +121,33 @@ export const Sidebar: React.FC = () => {
         console.error('Failed to fetch sidebar data:', error);
         setNavigation(navigationByRole[userRole] || []);
       }
-      } else if (userRole === 'company_admin') {
-      try {
-        const companyMenus = await fetchCompanySidebarMenus();
-        const formattedNavigation = companyMenus.map(item => {
-        const icon = getIconComponent(item.icon);
-        if (item.sub_menus.length > 0) {
+        } else if (userRole === 'company_admin') {
+        try {
+          const companyMenus = await fetchCompanySidebarMenus();
+          const formattedNavigation = companyMenus.map(item => {
+          const icon = getIconComponent(item.icon);
+          if (item.sub_menus.length > 1) {
+            return {
+            name: item.menu,
+            icon,
+            items: item.sub_menus.map(submenu => ({
+              name: submenu.menu,
+              href: submenu.url,
+              icon
+            }))
+            };
+          }
           return {
-          name: item.menu,
-          icon,
-          items: item.sub_menus.map(submenu => ({
-            name: submenu.menu,
-            href: submenu.url,
+            name: item.menu,
+            href: item.sub_menus[0]?.url || '#',
             icon
-          }))
           };
+          });
+          setNavigation(formattedNavigation);
+        } catch (error) {
+          console.error('Failed to fetch company menus:', error);
+          setNavigation(navigationByRole[userRole] || []);
         }
-        return {
-          name: item.menu,
-          href: '#',
-          icon
-        };
-        });
-        setNavigation(formattedNavigation);
-      } catch (error) {
-        console.error('Failed to fetch company menus:', error);
-        setNavigation(navigationByRole[userRole] || []);
-      }
       } else {
       setNavigation(navigationByRole[userRole] || []);
       }
