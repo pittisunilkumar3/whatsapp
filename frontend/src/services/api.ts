@@ -18,6 +18,22 @@ api.interceptors.request.use(
 	}
 );
 
+// Add response interceptor to handle token expiration
+api.interceptors.response.use(
+	(response) => response,
+	async (error) => {
+		if (error.response?.status === 401) {
+			localStorage.removeItem('token');
+			localStorage.removeItem('user');
+			window.location.href = '/login';
+		}
+		return Promise.reject(error);
+	}
+);
+
+
+
+
 interface EmployeeLoginResponse {
 	message: string;
 	data: {
