@@ -8,7 +8,9 @@ import { AuthGuard } from '../components/auth/AuthGuard';
 
 
 // Core Components
-import { Profile } from '../pages/Profile';
+import { SuperAdminProfile } from '../pages/super-admin/Profile';
+import { CompanyAdminProfile } from '../pages/company-admin/Profile';
+import { EmployeeProfile } from '../pages/employee/Profile';
 import { CompanyAdminDashboard } from '../pages/company-admin/Dashboard';
 import { CommunicationHub } from '../pages/CommunicationHub';
 import { Leads } from '../pages/Leads';
@@ -112,6 +114,7 @@ export const AppRoutes: React.FC = () => {
           <RoleGuard allowedRoles={['super_admin']}>
             <Routes>
                 <Route path="dashboard" element={<SuperAdminDashboard />} />
+                <Route path="profile" element={<SuperAdminProfile />} />
                 <Route path="companies" element={<Companies />} />
                 <Route path="billing" element={<BillingPage />} />
                 <Route path="settings" element={<SettingsPage />} />
@@ -127,8 +130,9 @@ export const AppRoutes: React.FC = () => {
         <Route path="/company-admin/*" element={
           <RoleGuard allowedRoles={['company_admin']}>
             <Routes>
-              <Route path="dashboard" element={<CompanyAdminDashboard />} />
-              <Route path="employees" element={<Employees />} />
+                <Route path="dashboard" element={<CompanyAdminDashboard />} />
+                <Route path="profile" element={<CompanyAdminProfile />} />
+                <Route path="employees" element={<Employees />} />
               <Route path="communication" element={<CommunicationHub />} />
               <Route path="communication/voice" element={<Voice />} />
                 <Route path="communication/whatsapp" element={<WhatsApp />} />
@@ -147,14 +151,15 @@ export const AppRoutes: React.FC = () => {
         <Route path="/employee/*" element={
           <RoleGuard allowedRoles={['employee']}>
             <Routes>
-              <Route path="dashboard" element={<EmployeeDashboard />} />
-              <Route path="communication" element={<CommunicationHub />} />
+                <Route path="dashboard" element={<EmployeeDashboard />} />
+                <Route path="profile" element={<EmployeeProfile />} />
+                <Route path="communication" element={<CommunicationHub />} />
               <Route path="communication/voice" element={<Voice />} />
               <Route path="communication/whatsapp" element={<WhatsApp />} />
               <Route path="communication/sms" element={<SMS />} />
               <Route path="communication/email" element={<Email />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="profile" element={<Profile />} />
+                <Route path="analytics" element={<Analytics />} />
+
             </Routes>
           </RoleGuard>
         } />

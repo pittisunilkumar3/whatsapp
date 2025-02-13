@@ -24,6 +24,19 @@ export const Navbar: React.FC = () => {
     }
   };
 
+  const getProfilePath = () => {
+    switch (user?.role) {
+      case 'super_admin':
+        return '/superadmin/profile';
+      case 'company_admin':
+        return '/company-admin/profile';
+      case 'employee':
+        return '/employee/profile';
+      default:
+        return '/login';
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -81,7 +94,7 @@ export const Navbar: React.FC = () => {
           </div>
           <button 
           className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center touch-manipulation"
-          onClick={() => navigate('/profile')}
+            onClick={() => navigate(getProfilePath())}
           >
           <User className="w-4 h-4 mr-2" />
           Profile

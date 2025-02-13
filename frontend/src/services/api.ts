@@ -34,6 +34,21 @@ api.interceptors.response.use(
 
 
 
+interface ProfileUpdateData {
+	first_name?: string;
+	last_name?: string;
+	phone_number?: string;
+}
+
+interface CompanyUpdateData extends ProfileUpdateData {
+	company_name?: string;
+	website?: string;
+	contact_person_name?: string;
+	contact_person_email?: string;
+	contact_person_phone?: string;
+	contact_person_position?: string;
+}
+
 interface EmployeeLoginResponse {
 	message: string;
 	data: {
@@ -146,5 +161,20 @@ export const apiService = {
 			console.error('Employee login error:', error);
 			throw error instanceof Error ? error : new Error('Network error occurred');
 		}
+	},
+
+	updateSuperAdminProfile: async (data: ProfileUpdateData) => {
+		const response = await api.put('/api/superadmin/profile', data);
+		return response.data;
+	},
+
+	updateCompanyProfile: async (data: CompanyUpdateData) => {
+		const response = await api.put('/api/companies/profile', data);
+		return response.data;
+	},
+
+	updateEmployeeProfile: async (data: ProfileUpdateData) => {
+		const response = await api.put('/api/company-employees/profile', data);
+		return response.data;
 	}
 };
