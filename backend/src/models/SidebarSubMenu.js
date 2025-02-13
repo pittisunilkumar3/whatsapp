@@ -4,11 +4,12 @@ class SidebarSubMenu {
 	static async create(subMenuData) {
 		const query = `
 			INSERT INTO sidebar_sub_menus (
-				sidebar_menu_id, menu, \`key\`, lang_key, url, level,
+				company_id, sidebar_menu_id, menu, \`key\`, lang_key, url, level,
 				access_permissions, permission_group_id, activate_controller,
 				activate_methods, addon_permission, is_active
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 		const values = [
+			subMenuData.company_id,
 			subMenuData.sidebar_menu_id,
 			subMenuData.menu,
 			subMenuData.key,
@@ -28,11 +29,12 @@ class SidebarSubMenu {
 	static async bulkCreate(subMenus) {
 		const query = `
 			INSERT INTO sidebar_sub_menus (
-				sidebar_menu_id, menu, \`key\`, lang_key, url, level,
+				company_id, sidebar_menu_id, menu, \`key\`, lang_key, url, level,
 				access_permissions, permission_group_id, activate_controller,
 				activate_methods, addon_permission, is_active
 			) VALUES ?`;
 		const values = subMenus.map(menu => [
+			menu.company_id,
 			menu.sidebar_menu_id,
 			menu.menu,
 			menu.key,
@@ -53,23 +55,31 @@ class SidebarSubMenu {
 		return db.query('SELECT * FROM sidebar_sub_menus WHERE id = ?', [id]);
 	}
 
+	static async findByCompanyId(companyId) {
+		return db.query('SELECT * FROM sidebar_sub_menus WHERE company_id = ?', [companyId]);
+	}
+
 	static async findAll() {
 		return db.query('SELECT * FROM sidebar_sub_menus');
 	}
 
-	static async findByMenuId(menuId) {
-		return db.query('SELECT * FROM sidebar_sub_menus WHERE sidebar_menu_id = ?', [menuId]);
+	static async findByMenuId(menuId, companyId) {
+		return db.query(
+			'SELECT * FROM sidebar_sub_menus WHERE sidebar_menu_id = ? AND company_id = ?',
+			[menuId, companyId]
+		);
 	}
 
 	static async update(id, subMenuData) {
 		const query = `
 			UPDATE sidebar_sub_menus SET
-				sidebar_menu_id = ?, menu = ?, \`key\` = ?, lang_key = ?,
+				company_id = ?, sidebar_menu_id = ?, menu = ?, \`key\` = ?, lang_key = ?,
 				url = ?, level = ?, access_permissions = ?,
 				permission_group_id = ?, activate_controller = ?,
 				activate_methods = ?, addon_permission = ?, is_active = ?
 			WHERE id = ?`;
 		const values = [
+			subMenuData.company_id,
 			subMenuData.sidebar_menu_id,
 			subMenuData.menu,
 			subMenuData.key,

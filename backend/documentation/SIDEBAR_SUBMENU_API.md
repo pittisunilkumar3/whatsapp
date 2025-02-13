@@ -6,6 +6,7 @@ The sidebar_sub_menus table has the following structure:
 ```sql
 CREATE TABLE sidebar_sub_menus (
 	id INT PRIMARY KEY AUTO_INCREMENT,
+	company_id INT(10) DEFAULT NULL,
 	sidebar_menu_id INT(10) DEFAULT NULL,
 	menu VARCHAR(500) DEFAULT NULL,
 	`key` VARCHAR(500) DEFAULT NULL,
@@ -23,7 +24,7 @@ CREATE TABLE sidebar_sub_menus (
 ```
 
 ## Base URL
-`http://localhost:5000/api/sidebar-sub-menus`
+`http://localhost:3000/api/sidebar-sub-menus`
 
 ## Endpoints
 
@@ -33,6 +34,7 @@ CREATE TABLE sidebar_sub_menus (
 - **Payload Example:**
 ```json
 {
+	"company_id": 1,
 	"sidebar_menu_id": 1,
 	"menu": "User List",
 	"key": "user_list",
@@ -66,8 +68,10 @@ CREATE TABLE sidebar_sub_menus (
 {
 	"subMenus": [
 		{
+			"company_id": 1,
 			"sidebar_menu_id": 1,
 			"menu": "User List",
+
 			"key": "user_list",
 			"lang_key": "user_list",
 			"url": "/users/list",
@@ -113,6 +117,7 @@ CREATE TABLE sidebar_sub_menus (
 {
 	"data": {
 		"id": 1,
+		"company_id": 1,
 		"sidebar_menu_id": 1,
 		"menu": "User List",
 		"key": "user_list",
@@ -139,6 +144,7 @@ CREATE TABLE sidebar_sub_menus (
 	"data": [
 		{
 			"id": 1,
+			"company_id": 1,
 			"sidebar_menu_id": 1,
 			"menu": "User List",
 			"key": "user_list",
@@ -157,16 +163,17 @@ CREATE TABLE sidebar_sub_menus (
 }
 ```
 
-### 5. Get Sub-Menus by Menu ID
-- **URL:** `/by-menu/:menuId`
+### 5. Get Sub-Menus by Company ID
+- **URL:** `/company/:companyId`
 - **Method:** `GET`
-- **Example:** `/by-menu/1`
+- **Example:** `/company/1`
 - **Success Response:**
 ```json
 {
 	"data": [
 		{
 			"id": 1,
+			"company_id": 1,
 			"sidebar_menu_id": 1,
 			"menu": "User List",
 			"key": "user_list",
@@ -185,12 +192,41 @@ CREATE TABLE sidebar_sub_menus (
 }
 ```
 
-### 6. Update Sidebar Sub-Menu
+### Get Sub-Menus by Menu ID
+GET `/api/sidebar-sub-menus/by-menu/:menuId`
+- Description: Retrieve all sub-menus for a specific menu
+- Parameters:
+	- `menuId`: Menu ID (path parameter)
+	- `companyId`: Company ID (query parameter, required)
+- Example: `/api/sidebar-sub-menus/by-menu/1?companyId=1`
+- Response: `200 OK`
+```json
+{
+	"data": [
+		{
+			"id": 1,
+			"company_id": 1,
+			"sidebar_menu_id": 1,
+			"menu": "Overview",
+			...rest of the fields
+		}
+	]
+}
+```
+- Error Responses:
+	- **Code**: 400
+		- **Content**: `{ "error": "Company ID is required" }`
+	- **Code**: 500
+		- **Content**: `{ "error": "Error message" }`
+```
+
+### 7. Update Sidebar Sub-Menu
 - **URL:** `/:id`
 - **Method:** `PUT`
 - **Payload Example:**
 ```json
 {
+	"company_id": 1,
 	"sidebar_menu_id": 1,
 	"menu": "Updated User List",
 	"key": "updated_user_list",
@@ -211,7 +247,7 @@ CREATE TABLE sidebar_sub_menus (
 }
 ```
 
-### 7. Bulk Update Sidebar Sub-Menus
+### 8. Bulk Update Sidebar Sub-Menus
 - **URL:** `/bulk/update`
 - **Method:** `PUT`
 - **Payload Example:**
@@ -240,7 +276,7 @@ CREATE TABLE sidebar_sub_menus (
 }
 ```
 
-### 8. Delete Sidebar Sub-Menu
+### 9. Delete Sidebar Sub-Menu
 - **URL:** `/:id`
 - **Method:** `DELETE`
 - **Example:** `/1`
@@ -251,7 +287,7 @@ CREATE TABLE sidebar_sub_menus (
 }
 ```
 
-### 9. Bulk Delete Sidebar Sub-Menus
+### 10. Bulk Delete Sidebar Sub-Menus
 - **URL:** `/bulk/delete`
 - **Method:** `DELETE`
 - **Payload Example:**
@@ -299,3 +335,9 @@ All endpoints return the following format for errors:
 1. Ensure XAMPP MySQL service is running
 2. Database and table will be created automatically through migrations
 3. Access the API endpoints as documented above
+
+
+
+
+
+

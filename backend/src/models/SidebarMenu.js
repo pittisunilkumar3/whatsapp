@@ -4,10 +4,11 @@ class SidebarMenu {
 	static async create(menuData) {
 		const query = `
 			INSERT INTO sidebar_menus (
-				permission_group_id, icon, menu, activate_menu, lang_key,
+				company_id, permission_group_id, icon, menu, activate_menu, lang_key,
 				system_level, level, sidebar_display, access_permissions, is_active
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 		const values = [
+			menuData.company_id,
 			menuData.permission_group_id,
 			menuData.icon,
 			menuData.menu,
@@ -25,10 +26,11 @@ class SidebarMenu {
 	static async bulkCreate(menus) {
 		const query = `
 			INSERT INTO sidebar_menus (
-				permission_group_id, icon, menu, activate_menu, lang_key,
+				company_id, permission_group_id, icon, menu, activate_menu, lang_key,
 				system_level, level, sidebar_display, access_permissions, is_active
 			) VALUES ?`;
 		const values = menus.map(menu => [
+			menu.company_id,
 			menu.permission_group_id,
 			menu.icon,
 			menu.menu,
@@ -47,6 +49,10 @@ class SidebarMenu {
 		return db.query('SELECT * FROM sidebar_menus WHERE id = ?', [id]);
 	}
 
+	static async findByCompanyId(companyId) {
+		return db.query('SELECT * FROM sidebar_menus WHERE company_id = ?', [companyId]);
+	}
+
 	static async findAll() {
 		return db.query('SELECT * FROM sidebar_menus');
 	}
@@ -54,11 +60,12 @@ class SidebarMenu {
 	static async update(id, menuData) {
 		const query = `
 			UPDATE sidebar_menus SET
-				permission_group_id = ?, icon = ?, menu = ?, activate_menu = ?,
+				company_id = ?, permission_group_id = ?, icon = ?, menu = ?, activate_menu = ?,
 				lang_key = ?, system_level = ?, level = ?, sidebar_display = ?,
 				access_permissions = ?, is_active = ?
 			WHERE id = ?`;
 		const values = [
+			menuData.company_id,
 			menuData.permission_group_id,
 			menuData.icon,
 			menuData.menu,

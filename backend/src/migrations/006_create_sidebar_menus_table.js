@@ -4,6 +4,7 @@ async function up() {
 	const query = `
 		CREATE TABLE IF NOT EXISTS sidebar_menus (
 			id INT PRIMARY KEY AUTO_INCREMENT,
+			company_id INT(10) DEFAULT NULL,
 			permission_group_id INT(10) DEFAULT NULL,
 			icon VARCHAR(100) DEFAULT NULL,
 			menu VARCHAR(500) DEFAULT NULL,

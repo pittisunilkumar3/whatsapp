@@ -54,7 +54,7 @@ export const fetchSuperAdminSidebar = async () => {
 
 export const fetchCompanySidebarMenus = async (): Promise<SidebarMenu[]> => {
 	try {
-		const response = await axios.get('http://localhost:5000/api/sidebar/menus-with-submenus');
+		const response = await axios.get('http://localhost:5000/api/sidebar-combined/company/0/menus-with-submenus');
 		return response.data.data;
 	} catch (error) {
 		console.error('Error fetching sidebar menus:', error);

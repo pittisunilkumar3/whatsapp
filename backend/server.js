@@ -52,7 +52,7 @@ app.use('/api/role-permissions', rolePermissionRoutes);
 app.use('/api', permGroupCombPermCatRoutes);
 app.use('/api/sidebar-menus', sidebarMenuRoutes);
 app.use('/api/sidebar-sub-menus', sidebarSubMenuRoutes);
-app.use('/api/sidebar', sidebarCombinedRoutes);
+app.use('/api/sidebar-combined', sidebarCombinedRoutes);
 app.use('/api/staff-roles', staffRoleRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/companies', companyRoutes);

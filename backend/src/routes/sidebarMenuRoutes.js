@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const SidebarMenu = require('../models/SidebarMenu');
 
+// Get menus by company ID
+router.get('/company/:companyId', async (req, res) => {
+	try {
+		const [menus] = await SidebarMenu.findByCompanyId(req.params.companyId);
+		res.json({ data: menus });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+});
+
 // Create single sidebar menu
 router.post('/', async (req, res) => {
 	try {

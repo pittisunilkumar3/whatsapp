@@ -2,14 +2,19 @@
 
 This API provides endpoints to fetch sidebar menus along with their associated sub-menus.
 
+## Base URL
+`http://localhost:3000/api/sidebar-combined`
+
 ## Endpoints
 
-### Get All Sidebar Menus with Sub-menus
+### Get Company Sidebar Menus with Sub-menus
 
-Retrieves all sidebar menus along with their associated sub-menus.
+Retrieves all sidebar menus and their sub-menus for a specific company.
 
-- **URL**: `/api/sidebar/menus-with-submenus`
+- **URL**: `/api/sidebar-combined/company/:companyId/menus-with-submenus`
 - **Method**: `GET`
+- **URL Parameters**: 
+	- `companyId`: ID of the company
 - **Success Response**:
 	- **Code**: 200
 	- **Content Example**:
@@ -18,6 +23,7 @@ Retrieves all sidebar menus along with their associated sub-menus.
 			"data": [
 				{
 					"id": 1,
+					"company_id": 1,
 					"permission_group_id": 1,
 					"icon": "dashboard",
 					"menu": "Dashboard",
@@ -31,6 +37,53 @@ Retrieves all sidebar menus along with their associated sub-menus.
 					"sub_menus": [
 						{
 							"id": 1,
+							"company_id": 1,
+							"sidebar_menu_id": 1,
+							"menu": "Overview",
+							"key": "overview",
+							"url": "/dashboard/overview",
+							"level": 1,
+							"access_permissions": "view_overview",
+							"is_active": 1
+						}
+					]
+				}
+			]
+		}
+		```
+- **Error Response**:
+	- **Code**: 500
+	- **Content**: `{ "error": "Error message" }`
+
+### Get All Sidebar Menus with Sub-menus
+
+Retrieves all sidebar menus along with their associated sub-menus.
+
+- **URL**: `/api/sidebar-combined/menus-with-submenus`
+- **Method**: `GET`
+- **Success Response**:
+	- **Code**: 200
+	- **Content Example**:
+		```json
+		{
+			"data": [
+				{
+					"id": 1,
+					"company_id": 1,
+					"permission_group_id": 1,
+					"icon": "dashboard",
+					"menu": "Dashboard",
+					"activate_menu": "dashboard",
+					"lang_key": "dashboard",
+					"system_level": 0,
+					"level": 1,
+					"sidebar_display": 1,
+					"access_permissions": "view_dashboard",
+					"is_active": 1,
+					"sub_menus": [
+						{
+							"id": 1,
+							"company_id": 1,
 							"sidebar_menu_id": 1,
 							"menu": "Overview",
 							"key": "overview",
@@ -52,7 +105,7 @@ Retrieves all sidebar menus along with their associated sub-menus.
 
 Retrieves a specific sidebar menu along with its associated sub-menus.
 
-- **URL**: `/api/sidebar/menu-with-submenus/:id`
+- **URL**: `/api/sidebar-combined/menu-with-submenus/:id`
 - **Method**: `GET`
 - **URL Parameters**: 
 	- `id`: ID of the sidebar menu
@@ -63,6 +116,7 @@ Retrieves a specific sidebar menu along with its associated sub-menus.
 		{
 			"data": {
 				"id": 1,
+				"company_id": 1,
 				"permission_group_id": 1,
 				"icon": "dashboard",
 				"menu": "Dashboard",
@@ -76,6 +130,7 @@ Retrieves a specific sidebar menu along with its associated sub-menus.
 				"sub_menus": [
 					{
 						"id": 1,
+						"company_id": 1,
 						"sidebar_menu_id": 1,
 						"menu": "Overview",
 						"key": "overview",
@@ -98,13 +153,14 @@ Retrieves a specific sidebar menu along with its associated sub-menus.
 
 Creates a new sidebar menu along with its associated sub-menus.
 
-- **URL**: `/api/sidebar/create-menu-with-submenus`
+- **URL**: `/api/sidebar-combined/create-menu-with-submenus`
 - **Method**: `POST`
 - **Request Body**:
     ```json
-    {
-        "menu": {
-            "permission_group_id": "number",
+{
+	"menu": {
+		"company_id": "number",
+		"permission_group_id": "number",
             "icon": "string",
             "menu": "string",
             "activate_menu": "string",
@@ -115,9 +171,10 @@ Creates a new sidebar menu along with its associated sub-menus.
             "access_permissions": "string",
             "is_active": "number"
         },
-        "subMenus": [
-            {
-                "menu": "string",
+"subMenus": [
+	{
+		"company_id": "number",
+		"menu": "string",
                 "key": "string",
                 "lang_key": "string",
                 "url": "string",
@@ -172,7 +229,7 @@ Creates a new sidebar menu along with its associated sub-menus.
 
 Deletes a sidebar menu along with all its associated sub-menus.
 
-- **URL**: `/api/sidebar/delete-menu-with-submenus/:id`
+- **URL**: `/api/sidebar-combined/delete-menu-with-submenus/:id`
 - **Method**: `DELETE`
 - **URL Parameters**: 
 	- `id`: ID of the sidebar menu to delete

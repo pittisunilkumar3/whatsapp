@@ -6,6 +6,7 @@ The sidebar_menus table has the following structure:
 ```sql
 CREATE TABLE sidebar_menus (
 	id INT PRIMARY KEY AUTO_INCREMENT,
+	company_id INT(10) DEFAULT NULL,
 	permission_group_id INT(10) DEFAULT NULL,
 	icon VARCHAR(100) DEFAULT NULL,
 	menu VARCHAR(500) DEFAULT NULL,
@@ -21,7 +22,7 @@ CREATE TABLE sidebar_menus (
 ```
 
 ## Base URL
-`http://localhost:5000/api/sidebar-menus`
+`http://localhost:3000/api/sidebar-menus`
 
 ## Endpoints
 
@@ -31,6 +32,7 @@ CREATE TABLE sidebar_menus (
 - **Payload Example:**
 ```json
 {
+	"company_id": 1,
 	"permission_group_id": 1,
 	"icon": "fa fa-dashboard",
 	"menu": "Dashboard",
@@ -62,6 +64,7 @@ CREATE TABLE sidebar_menus (
 {
 	"menus": [
 		{
+			"company_id": 1,
 			"permission_group_id": 1,
 			"icon": "fa fa-dashboard",
 			"menu": "Dashboard",
@@ -74,6 +77,7 @@ CREATE TABLE sidebar_menus (
 			"is_active": 1
 		},
 		{
+			"company_id": 1,
 			"permission_group_id": 2,
 			"icon": "fa fa-users",
 			"menu": "Users",
@@ -107,6 +111,7 @@ CREATE TABLE sidebar_menus (
 {
 	"data": {
 		"id": 1,
+		"company_id": 1,
 		"permission_group_id": 1,
 		"icon": "fa fa-dashboard",
 		"menu": "Dashboard",
@@ -125,6 +130,48 @@ CREATE TABLE sidebar_menus (
 ### 4. Get All Sidebar Menus
 - **URL:** `/`
 - **Method:** `GET`
+- **Success Response:**
+```json
+{
+	"data": [
+		{
+			"id": 1,
+			"company_id": 1,
+			"permission_group_id": 1,
+			"icon": "fa fa-dashboard",
+			"menu": "Dashboard",
+			"activate_menu": "dashboard",
+			"lang_key": "dashboard",
+			"system_level": 1,
+			"level": 1,
+			"sidebar_display": 1,
+			"access_permissions": "view_dashboard",
+			"is_active": 1,
+			"created_at": "2024-02-20T10:00:00.000Z"
+		},
+		{
+			"id": 2,
+			"company_id": 1,
+			"permission_group_id": 2,
+			"icon": "fa fa-users",
+			"menu": "Users",
+			"activate_menu": "users",
+			"lang_key": "users",
+			"system_level": 1,
+			"level": 2,
+			"sidebar_display": 1,
+			"access_permissions": "view_users",
+			"is_active": 1,
+			"created_at": "2024-02-20T10:00:00.000Z"
+		}
+	]
+}
+```
+
+### 5. Get Menus by Company ID
+- **URL:** `/company/:companyId`
+- **Method:** `GET`
+- **Example:** `/company/1`
 - **Success Response:**
 ```json
 {
@@ -167,6 +214,7 @@ CREATE TABLE sidebar_menus (
 - **Payload Example:**
 ```json
 {
+	"company_id": 1,
 	"permission_group_id": 1,
 	"icon": "fa fa-home",
 	"menu": "Home Dashboard",

@@ -48,7 +48,11 @@ router.get('/', async (req, res) => {
 // Get sub-menus by menu ID
 router.get('/by-menu/:menuId', async (req, res) => {
 	try {
-		const [subMenus] = await SidebarSubMenu.findByMenuId(req.params.menuId);
+		const companyId = req.query.companyId;
+		if (!companyId) {
+			return res.status(400).json({ error: 'Company ID is required' });
+		}
+		const [subMenus] = await SidebarSubMenu.findByMenuId(req.params.menuId, companyId);
 		res.json({ data: subMenus });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
@@ -90,6 +94,16 @@ router.delete('/bulk/delete', async (req, res) => {
 	try {
 		await SidebarSubMenu.bulkDelete(req.body.ids);
 		res.json({ message: 'Sidebar sub-menus deleted successfully' });
+	} catch (error) {
+		res.status(500).json({ error: error.message });
+	}
+});
+
+// Get sub-menus by company ID
+router.get('/company/:companyId', async (req, res) => {
+	try {
+		const [subMenus] = await SidebarSubMenu.findByCompanyId(req.params.companyId);
+		res.json({ data: subMenus });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
