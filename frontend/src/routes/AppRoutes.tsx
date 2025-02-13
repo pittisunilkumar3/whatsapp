@@ -36,6 +36,7 @@ import CompanyEmailIntegration from '../pages/company-admin/communication/EmailI
 
 // Company Admin Components
 import { Employees } from '../pages/company-admin/Employees';
+import { EmployeePermissions } from '../pages/company-admin/EmployeePermissions';
 
 // Employee Components
 import { EmployeeDashboard } from '../pages/employee/Dashboard';
@@ -140,10 +141,11 @@ export const AppRoutes: React.FC = () => {
                 <Route path="communication/email" element={<Email />} />
                 <Route path="communication/email-integration" element={<CompanyEmailIntegration />} />
                 <Route path="campaigns" element={<Campaigns />} />
-              <Route path="leads" element={<Leads />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Routes>
+                <Route path="leads" element={<Leads />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="settings" element={<SettingsPage />} />
+                <Route path="employee-permissions" element={<EmployeePermissions />} />
+              </Routes>
           </RoleGuard>
         } />
 
