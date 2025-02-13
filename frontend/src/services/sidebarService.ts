@@ -31,7 +31,33 @@ interface SidebarItem {
 	submenus: SubMenu[];
 }
 
+interface CompanySubMenu {
+	id: number;
+	menu: string;
+	url: string;
+	lang_key: string;
+	access_permissions: string;
+}
+
+interface SidebarMenu {
+	id: number;
+	icon: string;
+	menu: string;
+	lang_key: string;
+	sub_menus: CompanySubMenu[];
+}
+
 export const fetchSuperAdminSidebar = async () => {
 	const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/superadmin-sidebar/superadmin-sidebar-combined`);
 	return response.data.data as SidebarItem[];
+};
+
+export const fetchCompanySidebarMenus = async (): Promise<SidebarMenu[]> => {
+	try {
+		const response = await axios.get('http://localhost:5000/api/sidebar/menus-with-submenus');
+		return response.data.data;
+	} catch (error) {
+		console.error('Error fetching sidebar menus:', error);
+		return [];
+	}
 };

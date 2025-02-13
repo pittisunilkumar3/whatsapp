@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { fetchSuperAdminSidebar } from '../../services/sidebarService';
+import { fetchSuperAdminSidebar, fetchCompanySidebarMenus } from '../../services/sidebarService';
 import {
   Squares2X2Icon as LayoutDashboardIcon,
   ChatBubbleLeftRightIcon as MessageSquareIcon,
@@ -73,6 +73,14 @@ const getIconComponent = (iconName: string) => {
     BarChart2: BarChartIcon,
     Settings: SettingsIcon,
   };
+
+  // Handle Font Awesome icons
+  if (iconName?.startsWith('fa ')) {
+    return ({ className }: { className?: string }) => (
+      <i className={`${iconName} ${className}`} />
+    );
+  }
+
   return iconMap[iconName] || CircleDotIcon;
 };
 
@@ -86,34 +94,61 @@ export const Sidebar: React.FC = () => {
   useEffect(() => {
     const loadSidebarData = async () => {
       if (userRole === 'super_admin') {
-        try {
-          const sidebarData = await fetchSuperAdminSidebar();
-          const formattedNavigation = sidebarData.map(item => {
-            const icon = getIconComponent(item.icon);
-            if (item.submenus.length > 1) {
-              return {
-                name: item.menu,
-                icon,
-                items: item.submenus.map(submenu => ({
-                  name: submenu.menu,
-                  href: submenu.url,
-                  icon // Use parent menu's icon
-                }))
-              };
-            }
-            return {
-              name: item.menu,
-              href: item.submenus[0]?.url || '#',
-              icon
-            };
-          });
-          setNavigation(formattedNavigation);
-        } catch (error) {
-          console.error('Failed to fetch sidebar data:', error);
-          setNavigation(navigationByRole[userRole] || []);
+      try {
+        const sidebarData = await fetchSuperAdminSidebar();
+        const formattedNavigation = sidebarData.map(item => {
+        const icon = getIconComponent(item.icon);
+        if (item.submenus.length > 1) {
+          return {
+          name: item.menu,
+          icon,
+          items: item.submenus.map(submenu => ({
+            name: submenu.menu,
+            href: submenu.url,
+            icon
+          }))
+          };
         }
-      } else {
+        return {
+          name: item.menu,
+          href: item.submenus[0]?.url || '#',
+          icon
+        };
+        });
+        setNavigation(formattedNavigation);
+      } catch (error) {
+        console.error('Failed to fetch sidebar data:', error);
         setNavigation(navigationByRole[userRole] || []);
+      }
+      } else if (userRole === 'company_admin') {
+      try {
+        const companyMenus = await fetchCompanySidebarMenus();
+        const formattedNavigation = companyMenus.map(item => {
+        const icon = getIconComponent(item.icon);
+        if (item.sub_menus.length > 0) {
+          return {
+          name: item.menu,
+          icon,
+          items: item.sub_menus.map(submenu => ({
+            name: submenu.menu,
+            href: submenu.url,
+            icon
+          }))
+          };
+        }
+        return {
+          name: item.menu,
+          href: '#',
+          icon
+        };
+        });
+        setNavigation(formattedNavigation);
+      } catch (error) {
+        console.error('Failed to fetch company menus:', error);
+        setNavigation(navigationByRole[userRole] || []);
+      }
+      } else {
+      setNavigation(navigationByRole[userRole] || []);
       }
     };
 
