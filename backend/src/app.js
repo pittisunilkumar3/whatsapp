@@ -29,6 +29,8 @@ const superadminSidebarCombinedRoutes = require('./routes/superadminSidebarCombi
 const superAdminSidebarSubMenuRoutes = require('./routes/superAdminSidebarSubMenuRoutes');
 const companyRoleRoutes = require('./routes/companyRoleRoutes');
 const companyEmployeeRoleRoutes = require('./routes/companyEmployeeRoleRoutes');
+const companyRolePermissionRoutes = require('./routes/companyRolePermissionRoutes');
+const superadminRolePermissionRoutes = require('./routes/superadminRolePermissionRoutes');
 
 const app = express();
 
@@ -59,6 +61,8 @@ app.use('/api/superadmin-sidebar-combined', superadminSidebarCombinedRoutes);
 app.use('/api/superadmin-sidebar-sub-menus', superAdminSidebarSubMenuRoutes);
 app.use('/api/company-roles', companyRoleRoutes);
 app.use('/api/company-employee-roles', companyEmployeeRoleRoutes);
+app.use('/api/company-role-permissions', companyRolePermissionRoutes);
+app.use('/api/superadmin-role-permissions', superadminRolePermissionRoutes);
 
 // Call Agent Routes
 app.use('/api/call-agents', callAgentRoutes);
