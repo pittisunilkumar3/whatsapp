@@ -24,6 +24,7 @@ import {
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
+import { useNavigate } from 'react-router-dom';
 
 interface Company {
     id: string;
@@ -95,15 +96,14 @@ export const Companies: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [planFilter, setPlanFilter] = useState<string>('all');
-    const [showAddModal, setShowAddModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [newCompany, setNewCompany] = useState<Partial<Company>>({});
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
+    const navigate = useNavigate();
+    
     useEffect(() => {
         console.log('Companies Page - User:', user);
         console.log('Companies Page - Is Authenticated:', isAuthenticated);
@@ -154,63 +154,7 @@ export const Companies: React.FC = () => {
     const totalPages = Math.ceil(filteredCompanies.length / ITEMS_PER_PAGE);
 
     const handleAddCompany = () => {
-        // Form validation
-        const requiredFields = [
-            'name',
-            'industry',
-            'location',
-            'contactPerson',
-            'email',
-            'phone'
-        ];
-
-        const missingFields = requiredFields.filter(
-            field => !newCompany[field as keyof typeof newCompany]
-        );
-
-        if (missingFields.length > 0) {
-            alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
-            return;
-        }
-
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(newCompany.email || '')) {
-            alert('Please enter a valid email address');
-            return;
-        }
-
-        // Phone validation
-        const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-        if (!phoneRegex.test(newCompany.phone || '')) {
-            alert('Please enter a valid phone number');
-            return;
-        }
-
-        const company: Company = {
-            id: (companies.length + 1).toString(),
-            name: newCompany.name!,
-            status: 'active',
-            employees: 0,
-            plan: newCompany.plan || 'Enterprise',
-            lastActive: new Date().toISOString(),
-            industry: newCompany.industry!,
-            location: newCompany.location!,
-            contactPerson: newCompany.contactPerson!,
-            email: newCompany.email!,
-            phone: newCompany.phone!,
-            subscriptionStart: new Date().toISOString().split('T')[0],
-            subscriptionEnd: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-            usage: {
-                messages: 0,
-                storage: 0,
-                api_calls: 0
-            }
-        };
-
-        setCompanies([...companies, company]);
-        setNewCompany({});
-        setShowAddModal(false);
+        navigate('/superadmin/addcompany');
     };
 
     const handleDeleteCompany = () => {
@@ -267,7 +211,7 @@ export const Companies: React.FC = () => {
                         Export Data
                     </Button>
                     <Button 
-                        onClick={() => setShowAddModal(true)}
+                        onClick={handleAddCompany}
                         className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white"
                     >
                         <PlusCircle className="w-4 h-4 mr-2" />
@@ -475,80 +419,6 @@ export const Companies: React.FC = () => {
             )}
 
             {/* Modals */}
-            <Modal
-                isOpen={showAddModal}
-                onClose={() => {
-                    setShowAddModal(false);
-                    setNewCompany({});
-                }}
-                title="Add New Company"
-            >
-                <div className="space-y-6 p-4">
-                    <Input
-                        label="Company Name"
-                        placeholder="Enter company name"
-                        value={newCompany.name || ''}
-                        onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
-                    />
-                    <Input
-                        label="Industry"
-                        placeholder="Enter industry"
-                        value={newCompany.industry || ''}
-                        onChange={(e) => setNewCompany({ ...newCompany, industry: e.target.value })}
-                    />
-                    <Input
-                        label="Location"
-                        placeholder="Enter location"
-                        value={newCompany.location || ''}
-                        onChange={(e) => setNewCompany({ ...newCompany, location: e.target.value })}
-                    />
-                    <Input
-                        label="Contact Person"
-                        placeholder="Enter contact person name"
-                        value={newCompany.contactPerson || ''}
-                        onChange={(e) => setNewCompany({ ...newCompany, contactPerson: e.target.value })}
-                    />
-                    <Input
-                        label="Email"
-                        type="email"
-                        placeholder="Enter email"
-                        value={newCompany.email || ''}
-                        onChange={(e) => setNewCompany({ ...newCompany, email: e.target.value })}
-                    />
-                    <Input
-                        label="Phone"
-                        placeholder="Enter phone number"
-                        value={newCompany.phone || ''}
-                        onChange={(e) => setNewCompany({ ...newCompany, phone: e.target.value })}
-                    />
-                    <Dropdown
-                        label="Plan"
-                        value={newCompany.plan || 'Enterprise'}
-                        onChange={(value) => setNewCompany({ ...newCompany, plan: value })}
-                        options={[
-                            { label: 'Enterprise', value: 'Enterprise' },
-                            { label: 'Professional', value: 'Professional' },
-                            { label: 'Startup', value: 'Startup' }
-                        ]}
-                        className="min-w-full"
-                    />
-                    <div className="flex justify-end space-x-4 mt-8">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setShowAddModal(false);
-                                setNewCompany({});
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={handleAddCompany}>
-                            Add Company
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
-
             <Modal
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}

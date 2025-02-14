@@ -27,6 +27,7 @@ import { Email } from '../pages/communication/Email';
 import { SuperAdminDashboard } from '../pages/super-admin/Dashboard';
 import { RolePermissions } from '../pages/super-admin/RolePermissions';
 import { Companies } from '../pages/super-admin/Companies';
+import { AddCompany } from '../pages/super-admin/AddCompany';
 import { BillingPage } from '../pages/super-admin/Billing';
 import { AuditLogs } from '../pages/super-admin/AuditLogs';
 import { SettingsPage } from '../pages/super-admin/settings';
@@ -117,6 +118,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="dashboard" element={<SuperAdminDashboard />} />
                 <Route path="profile" element={<SuperAdminProfile />} />
                 <Route path="companies" element={<Companies />} />
+                <Route path="addcompany" element={<AddCompany />} />
                 <Route path="billing" element={<BillingPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="audit-logs" element={<AuditLogs />} />
