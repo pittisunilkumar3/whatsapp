@@ -1,4 +1,5 @@
 import { useState, ChangeEvent } from 'react'
+import axios from 'axios'
 import { Button } from "../../components/ui/Button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card"
 import { Input } from "../../components/ui/Input"
@@ -235,11 +236,113 @@ export default function CompanyRegistrationForm() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (validateForm()) {
-      alert('Form submitted successfully!')
-      console.log(formData)
+      try {
+        // Create payload with required fields
+        const payload = {
+          username: formData.username,
+          password: formData.password,
+          company_name: formData.company_name,
+          email: formData.email,
+          phone: formData.phone,
+          trading_name: formData.trading_name || undefined,
+          industry: formData.industry || undefined,
+          company_type: formData.company_type || undefined,
+          registration_number: formData.registration_number || undefined,
+          tax_number: formData.tax_number || undefined,
+          founded_date: formData.founded_date || undefined,
+          contact_person_name: formData.contact_person_name || undefined,
+          contact_person_email: formData.contact_person_email || undefined,
+          contact_person_phone: formData.contact_person_phone || undefined,
+          contact_person_position: formData.contact_person_position || undefined,
+          contact_person_mobile: formData.contact_person_mobile || undefined,
+        }
+
+        const response = await axios.post('http://localhost:5000/api/companies', payload)
+        if (response.status === 200 || response.status === 201) {
+          alert('Company created successfully!')
+          // Reset form
+          setFormData({
+            username: '',
+            password: '',
+            company_name: '',
+            trading_name: '',
+            registration_number: '',
+            tax_number: '',
+            industry: '',
+            founded_date: '',
+            company_type: '',
+            email: '',
+            phone: '',
+            fax: '',
+            website: '',
+            social_media_linkedin: '',
+            social_media_twitter: '',
+            social_media_facebook: '',
+            street_address: '',
+            building_name: '',
+            floor_number: '',
+            city: '',
+            state: '',
+            country: '',
+            postal_code: '',
+            mailing_address: '',
+            mailing_city: '',
+            mailing_state: '',
+            mailing_country: '',
+            mailing_postal_code: '',
+            contact_person_name: '',
+            contact_person_position: '',
+            contact_person_email: '',
+            contact_person_phone: '',
+            contact_person_mobile: '',
+            secondary_contact_name: '',
+            secondary_contact_position: '',
+            secondary_contact_email: '',
+            secondary_contact_phone: '',
+            employee_count: '',
+            annual_revenue: '',
+            company_description: '',
+            business_hours: '',
+            year_end_date: '',
+            bank_name: '',
+            bank_account_name: '',
+            bank_account_number: '',
+            bank_swift_code: '',
+            logo_url: '',
+            parent_company_name: '',
+            subsidiary_companies: '',
+            operation_countries: '',
+            languages_spoken: '',
+            certifications: '',
+            licenses: '',
+            status: '',
+            listing_status: '',
+            credit_rating: '',
+            compliance_status: '',
+            last_audit_date: '',
+            license_renewal_date: '',
+            insurance_renewal_date: '',
+            insurance_provider: '',
+            insurance_policy_number: '',
+            insurance_expiry_date: '',
+            created_at: '',
+            updated_at: '',
+            created_by: '',
+            updated_by: '',
+            is_verified: false,
+            verification_date: '',
+            two_factor_enabled: false,
+            two_factor_secret: '',
+            backup_codes: '',
+          })
+        }
+      } catch (error: any) {
+        console.error('Error creating company:', error)
+        alert(error.response?.data?.message || 'Error creating company. Please try again.')
+      }
     }
   }
 

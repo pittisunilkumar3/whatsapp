@@ -60,13 +60,28 @@ export const Companies: React.FC = () => {
         const fetchCompanies = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch('http://localhost:5000/api/companies/with-employee-counts');
+                const response = await fetch('http://localhost:5000/api/companies/with-employee-counts', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const result = await response.json();
-                setCompanies(result.data);
+                setCompanies(result.data || []);
                 setError(null);
-            } catch (err) {
-                setError('Failed to fetch companies');
+            } catch (err: any) {
+                if (err.message.includes('Failed to fetch') || err.message.includes('ERR_CONNECTION_REFUSED')) {
+                    setError('Unable to connect to server. Please make sure the backend server is running.');
+                } else {
+                    setError(`Error fetching companies: ${err.message}`);
+                }
                 console.error('Error fetching companies:', err);
+                setCompanies([]);
             } finally {
                 setIsLoading(false);
             }
@@ -238,6 +253,16 @@ export const Companies: React.FC = () => {
                     <div className="flex items-center gap-2 text-red-700">
                         <XIcon className="w-5 h-5" />
                         <span className="font-medium">{error}</span>
+                        {error.includes('backend server') && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => window.location.reload()}
+                                className="ml-2"
+                            >
+                                Retry
+                            </Button>
+                        )}
                     </div>
                 </motion.div>
             )}
