@@ -34,6 +34,8 @@ import { SettingsPage } from '../pages/super-admin/settings';
 import { Permissions } from '../pages/super-admin/Permissions';
 import EmailIntegration from '../pages/super-admin/EmailIntegration';
 import CompanyEmailIntegration from '../pages/company-admin/communication/EmailIntegration';
+import { RoleManagement } from '../pages/super-admin/RoleManagement';
+import { CompanyRoleManagement } from '../pages/company-admin/RoleManagement';
 
 // Company Admin Components
 import { Employees } from '../pages/company-admin/Employees';
@@ -125,6 +127,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="role-permissions" element={<RolePermissions />} />
                 <Route path="permissions" element={<Permissions />} />
                 <Route path="email-integration" element={<EmailIntegration />} />
+                <Route path="role-management" element={<RoleManagement />} />
             </Routes>
           </RoleGuard>
         } />
@@ -147,6 +150,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="employee-permissions" element={<EmployeePermissions />} />
+                <Route path="role-management" element={<CompanyRoleManagement />} />
               </Routes>
           </RoleGuard>
         } />
