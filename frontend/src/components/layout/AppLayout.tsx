@@ -5,9 +5,9 @@ import { useLocation, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { AccessibilityProvider } from '../ui/AccessibilityProvider';
 import { SkipNavigation, MainContentMarkers } from '../ui/SkipNavigation';
-import { NotificationSystem } from '../notifications/NotificationSystem';
 
 interface AppLayoutProps {
+
   children: React.ReactNode;
 }
 
@@ -55,11 +55,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <AccessibilityProvider>
-      <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 relative">
         <SkipNavigation />
         <div className="flex h-screen overflow-hidden">
           <Sidebar />
-          <div className="flex-1 flex flex-col w-full">
+            <div className="flex-1 flex flex-col w-full relative">
             <Navbar />
             <main 
               id="main-content"
@@ -74,8 +74,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </main>
           </div>
         </div>
-        <NotificationSystem />
-      </div>
-    </AccessibilityProvider>
-  );
-};
+        </div>
+      </AccessibilityProvider>
+      );
+    };

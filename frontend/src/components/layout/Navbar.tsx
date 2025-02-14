@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Settings, User, LogOut, ChevronDown } from 'lucide-react';
+import { Settings, User, LogOut, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
+import { NotificationSystem } from '../notifications/NotificationSystem';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const notificationRef = useRef<HTMLDivElement>(null);
+
 
   const getSettingsPath = () => {
     switch (user?.role) {
@@ -40,12 +40,10 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false);
-      }
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
+      setShowUserMenu(false);
       }
     };
+
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -61,20 +59,24 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 h-14 sm:h-16 flex items-center px-3 sm:px-6">
+    <nav className="bg-white border-b border-gray-200 h-14 sm:h-16 flex items-center px-3 sm:px-6 relative z-20">
       <div className="flex-1">
       <span className="text-base sm:text-lg font-medium text-gray-700 truncate">
-        Welcome, {user?.name}
+        Welcome, {user?.first_name}
       </span>
       </div>
       <div className="flex items-center space-x-2 sm:space-x-4">
-      <button 
-        className="p-2 hover:bg-gray-100 rounded-full touch-manipulation"
-        onClick={() => navigate(getSettingsPath())}
-        aria-label="Settings"
-      >
-        <Settings className="w-5 h-5 text-gray-600" />
-      </button>
+      {/* Notification System */}
+      <NotificationSystem />
+
+
+        <button 
+          className="p-2 hover:bg-gray-100 rounded-full touch-manipulation"
+          onClick={() => navigate(getSettingsPath())}
+          aria-label="Settings"
+        >
+          <Settings className="w-5 h-5 text-gray-600" />
+        </button>
 
       <div className="relative" ref={userMenuRef}>
         <button 

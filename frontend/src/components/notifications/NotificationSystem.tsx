@@ -85,67 +85,71 @@ export const NotificationSystem: React.FC = () => {
 	};
 
 	return (
-		<>
-			<div className="relative">
-				<button
-					className="relative p-2 rounded-full hover:bg-gray-100"
-					onClick={() => setShowDropdown(!showDropdown)}
-				>
-					<Bell className="w-6 h-6" />
-					{notifications.some(n => !n.read) && (
-						<span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-					)}
-				</button>
+		<div className="relative">
+			<button
+				className="relative p-2 rounded-full hover:bg-gray-100"
+				onClick={() => setShowDropdown(!showDropdown)}
+			>
+				<Bell className="w-5 h-5 text-gray-600" />
+				{notifications.some(n => !n.read) && (
+					<span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+				)}
+			</button>
 
-				<AnimatePresence>
-					{showDropdown && (
-						<motion.div
-							initial={{ opacity: 0, y: 10 }}
-							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: 10 }}
-							className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
-						>
-							<div className="p-4 border-b">
-								<h3 className="font-medium">Notifications</h3>
-							</div>
-							<div className="max-h-96 overflow-y-auto">
-								{notifications.map(notification => (
-									<div
-										key={notification.id}
-										className={`p-4 border-b hover:bg-gray-50 ${
-											!notification.read ? 'bg-gray-50' : ''
-										}`}
-									>
-										<div className="flex items-start">
-											{getChannelIcon(notification.channel)}
-											<div className="ml-3 flex-1">
-												<p className="font-medium text-sm">{notification.title}</p>
-												<p className="text-secondary-text text-sm">
-													{notification.message}
-												</p>
-												<p className="text-xs text-gray-400 mt-1">
-													{notification.timestamp.toLocaleTimeString()}
-												</p>
-											</div>
+			<AnimatePresence>
+				{showDropdown && (
+					<motion.div
+						initial={{ opacity: 0, y: 10 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: 10 }}
+						className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-[60]"
+					>
+						<div className="p-4 border-b border-gray-200">
+							<h3 className="font-medium">Notifications</h3>
+						</div>
+						<div className="max-h-[400px] overflow-y-auto">
+							{notifications.map(notification => (
+								<div
+									key={notification.id}
+									className={`p-4 border-b hover:bg-gray-50 ${
+										!notification.read ? 'bg-gray-50' : ''
+									}`}
+								>
+									<div className="flex items-start">
+										{getChannelIcon(notification.channel)}
+										<div className="ml-3 flex-1">
+											<p className="font-medium text-sm">{notification.title}</p>
+											<p className="text-gray-600 text-sm">{notification.message}</p>
+											<p className="text-xs text-gray-400 mt-1">
+												{notification.timestamp.toLocaleTimeString()}
+											</p>
 										</div>
 									</div>
-								))}
-							</div>
-						</motion.div>
-					)}
-				</AnimatePresence>
-			</div>
+								</div>
+							))}
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 
 			<AnimatePresence>
 				{lastToast && (
-					<NotificationToast
-						title={lastToast.title}
-						message={lastToast.message}
-						icon={getChannelIcon(lastToast.channel)}
-						onClose={() => setLastToast(null)}
-					/>
+					<motion.div
+						initial={{ opacity: 0, y: -20 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -20 }}
+						className="fixed top-4 right-4 z-[100]"
+					>
+						<NotificationToast
+							title={lastToast.title}
+							message={lastToast.message}
+							icon={getChannelIcon(lastToast.channel)}
+							onClose={() => setLastToast(null)}
+						/>
+					</motion.div>
 				)}
 			</AnimatePresence>
-		</>
+		</div>
+
 	);
 };

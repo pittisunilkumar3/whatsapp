@@ -78,7 +78,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
 						stiffness: 300,
 						damping: 30,
 					}}
-					className="fixed top-4 right-4 z-50"
+					className="fixed top-4 right-4 z-[100]"
 				>
 					<div
 						className={`
