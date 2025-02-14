@@ -475,6 +475,37 @@ Filtered responses maintain the same structure as non-filtered responses:
 		}
 		```
 
+### 3.1 Get All Companies with Employee Counts
+- **URL**: `/api/companies/with-employee-counts`
+- **Method**: `GET`
+- **Success Response**:
+    - **Code**: 200
+    - **Content**:
+        ```json
+        {
+            "data": [
+                {
+                    "id": 1,
+                    "username": "testcompany",
+                    "company_name": "Test Company Ltd",
+                    "industry": "Technology",
+                    "employee_count": 5,
+                    "created_at": "2024-01-01T00:00:00.000Z",
+                    "updated_at": "2024-01-01T00:00:00.000Z"
+                }
+            ]
+        }
+        ```
+- **Error Response**:
+    - **Code**: 500
+    - **Content**: 
+        ```json
+        {
+            "error": "Failed to fetch companies with employee counts",
+            "details": "Error message"
+        }
+        ```
+
 ### 4. Get Single Company
 - **URL**: `/api/companies/:id`
 - **Method**: `GET`

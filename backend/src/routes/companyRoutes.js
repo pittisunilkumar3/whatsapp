@@ -5,6 +5,36 @@ const jwt = require('jsonwebtoken');
 const Company = require('../models/Company');
 const db = require('../../db');
 
+// Test database tables
+router.get('/test-db', async (req, res) => {
+	try {
+		const [tables] = await db.query(`
+			SELECT TABLE_NAME 
+			FROM information_schema.TABLES 
+			WHERE TABLE_SCHEMA = DATABASE()
+		`);
+		res.json({ tables });
+	} catch (error) {
+		res.status(500).json({ 
+			error: 'Failed to fetch tables',
+			details: error.message 
+		});
+	}
+});
+
+// Get all companies with employee counts
+router.get('/with-employee-counts', async (req, res) => {
+	try {
+		const [companies] = await Company.findAllWithEmployeeCounts();
+		res.json({ data: companies });
+	} catch (error) {
+		res.status(500).json({ 
+			error: 'Failed to fetch companies with employee counts',
+			details: error.message 
+		});
+	}
+});
+
 // Create a new company
 router.post('/', async (req, res) => {
 	try {

@@ -45,6 +45,18 @@ class Company {
 	static async delete(id) {
 		return db.query('DELETE FROM companies WHERE id = ?', [id]);
 	}
+
+	static async findAllWithEmployeeCounts() {
+		const query = `
+			SELECT 
+				c.*,
+				COUNT(ce.id) as employee_count
+			FROM companies c
+			LEFT JOIN company_employee ce ON c.id = ce.company_id
+			GROUP BY c.id
+		`;
+		return db.query(query);
+	}
 }
 
 module.exports = Company;

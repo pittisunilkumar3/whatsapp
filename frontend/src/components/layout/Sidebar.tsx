@@ -45,7 +45,7 @@ const navigationByRole: Record<Role, Array<{ name: string; href: string; icon: a
         { name: 'WhatsApp', href: '/company-admin/communication/whatsapp', icon: MessageSquareIcon },
         { name: 'SMS', href: '/company-admin/communication/sms', icon: MessageSquareIcon },
         { name: 'Email', href: '/company-admin/communication/email', icon: MailIcon },
-        { name: 'Email Integration', href: '/company-admin/communication/email-integration', icon: MailIcon },
+        { name: 'Email Settings', href: '/company-admin/communication/email-integration', icon: MailIcon },
       ]
     },
     { name: 'Employees', href: '/company-admin/employees', icon: UsersIcon },

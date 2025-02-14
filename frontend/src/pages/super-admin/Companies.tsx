@@ -6,20 +6,20 @@ import { StatusPill } from '../../components/ui/StatusPill';
 import { Dropdown } from '../../components/ui/Dropdown';
 import { Modal } from '../../components/ui/Modal';
 import { 
-    Building2,
+    Building2 as BuildingIcon,
     PlusCircle,
-    SearchIcon,
+    Search,
     Users,
     Settings2,
     MoreVertical,
-    FilterIcon,
+    Filter,
     Download,
     Trash,
     PencilIcon,
-    XIcon,
+    X as XIcon,
     CheckIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon
+    ChevronLeft as ChevronLeftIcon,
+    ChevronRight as ChevronRightIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,75 +27,53 @@ import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 
 interface Company {
-    id: string;
-    name: string;
-    status: 'active' | 'inactive' | 'pending' | 'suspended';
-    employees: number;
-    plan: string;
-    lastActive: string;
+    id: number;
+    username: string;
+    company_name: string;
+    trading_name: string;
     industry: string;
-    location: string;
-    contactPerson: string;
     email: string;
     phone: string;
-    subscriptionStart: string;
-    subscriptionEnd: string;
-    usage: {
-        messages: number;
-        storage: number;
-        api_calls: number;
-    };
+    website: string;
+    contact_person_name: string;
+    contact_person_position: string;
+    contact_person_email: string;
+    contact_person_phone: string;
+    employee_count: number;
+    status: string;
+    is_verified: number;
+    created_at: string;
+    city: string;
+    state: string;
+    country: string;
 }
 
-const mockCompanies: Company[] = [
-    {
-        id: '1',
-        name: 'Acme Corporation',
-        status: 'active',
-        employees: 25,
-        plan: 'Enterprise',
-        lastActive: '2024-02-15T10:30:00Z',
-        industry: 'Technology',
-        location: 'New York, USA',
-        contactPerson: 'John Smith',
-        email: 'john@acme.com',
-        phone: '+1 234 567 8900',
-        subscriptionStart: '2023-01-01',
-        subscriptionEnd: '2024-12-31',
-        usage: {
-            messages: 25000,
-            storage: 50,
-            api_calls: 15000
-        }
-    },
-    {
-        id: '2',
-        name: 'TechStart Inc',
-        status: 'active',
-        employees: 12,
-        plan: 'Professional',
-        lastActive: '2024-02-15T09:45:00Z',
-        industry: 'Software',
-        location: 'San Francisco, USA',
-        contactPerson: 'Sarah Johnson',
-        email: 'sarah@techstart.com',
-        phone: '+1 234 567 8901',
-        subscriptionStart: '2023-06-01',
-        subscriptionEnd: '2024-05-31',
-        usage: {
-            messages: 12000,
-            storage: 25,
-            api_calls: 8000
-        }
-    },
-];
 
 export const Companies: React.FC = () => {
     const { user, isAuthenticated } = useAuthStore();
-    const [companies, setCompanies] = useState<Company[]>(mockCompanies);
+    const [companies, setCompanies] = useState<Company[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
-    const [planFilter, setPlanFilter] = useState<string>('all');
+
+
+    useEffect(() => {
+        const fetchCompanies = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch('http://localhost:5000/api/companies/with-employee-counts');
+                const result = await response.json();
+                setCompanies(result.data);
+                setError(null);
+            } catch (err) {
+                setError('Failed to fetch companies');
+                console.error('Error fetching companies:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCompanies();
+    }, []);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -125,26 +103,22 @@ export const Companies: React.FC = () => {
         setCurrentPage(1); // Reset to first page when filter changes
     };
 
-    const handlePlanFilter = (plan: string) => {
-        setPlanFilter(plan);
-        setCurrentPage(1); // Reset to first page when filter changes
-    };
+
+
 
     const filteredCompanies = useMemo(() => {
         return companies.filter(company => {
             const searchMatch = searchTerm.toLowerCase().trim() === '' ||
-                company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                company.industry.toLowerCase().includes(searchTerm.toLowerCase());
+                company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                company.industry?.toLowerCase().includes(searchTerm.toLowerCase());
         
             const statusMatch = statusFilter === 'all' ||
-                company.status.toLowerCase() === statusFilter.toLowerCase();
+                company.status?.toLowerCase() === statusFilter.toLowerCase();
         
-            const planMatch = planFilter === 'all' ||
-                company.plan === planFilter;
-        
-            return searchMatch && statusMatch && planMatch;
+            return searchMatch && statusMatch;
         });
-    }, [companies, searchTerm, statusFilter, planFilter]);
+    }, [companies, searchTerm, statusFilter]);
+
 
     const paginatedCompanies = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -225,11 +199,11 @@ export const Companies: React.FC = () => {
                 <div className="flex flex-col gap-4">
                     <div className="w-full">
                         <div className="relative">
-                            <SearchIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                             <Input
                                 value={searchTerm}
                                 onChange={handleSearch}
-                                placeholder="Search companies..."
+                                placeholder="Search companies by name or industry..."
                                 className="pl-10 w-full h-10 bg-gray-50 border-gray-200 focus:border-primary focus:ring-primary rounded-lg"
                             />
                         </div>
@@ -243,21 +217,8 @@ export const Companies: React.FC = () => {
                                     { label: 'All Status', value: 'all' },
                                     { label: 'Active', value: 'active' },
                                     { label: 'Inactive', value: 'inactive' },
-                                    { label: 'Pending', value: 'pending' },
-                                    { label: 'Suspended', value: 'suspended' }
-                                ]}
-                                className="w-full h-10 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-primary focus:ring-primary text-gray-900 text-sm"
-                            />
-                        </div>
-                        <div className="relative min-w-[160px]">
-                            <Dropdown
-                                value={planFilter}
-                                onChange={handlePlanFilter}
-                                options={[
-                                    { label: 'All Plans', value: 'all' },
-                                    { label: 'Enterprise', value: 'Enterprise' },
-                                    { label: 'Professional', value: 'Professional' },
-                                    { label: 'Startup', value: 'Startup' }
+                                    { label: 'Verified', value: 'verified' },
+                                    { label: 'Unverified', value: 'unverified' }
                                 ]}
                                 className="w-full h-10 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-primary focus:ring-primary text-gray-900 text-sm"
                             />
@@ -265,6 +226,7 @@ export const Companies: React.FC = () => {
                     </div>
                 </div>
             </Card>
+
 
             {/* Error Message */}
             {error && (
@@ -290,7 +252,7 @@ export const Companies: React.FC = () => {
                     <div className="space-y-4">
                         {paginatedCompanies.length === 0 ? (
                             <div className="text-center py-12 bg-gray-50 rounded-lg">
-                                <Building className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                <BuildingIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                                 <h3 className="text-lg font-medium text-gray-900 mb-1">No companies found</h3>
                                 <p className="text-gray-500">Try adjusting your search or filter criteria</p>
                             </div>
@@ -307,41 +269,41 @@ export const Companies: React.FC = () => {
                                             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                                                 <div className="flex items-start gap-4">
                                                     <div className="p-3 rounded-xl bg-primary bg-opacity-10 flex-shrink-0">
-                                                        <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                                                        <BuildingIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                                                     </div>
-                                                <div>
-                                                    <h3 className="text-lg font-semibold text-gray-900">{company.name}</h3>
-                                                    <div className="flex flex-wrap items-center gap-3 mt-1">
-                                                        <StatusPill status={company.status} />
-                                                        <span className="text-sm text-gray-600">
-                                                            {company.industry}
-                                                        </span>
-                                                        <span className="text-sm text-gray-500">
-                                                            {company.location}
-                                                        </span>
+                                                    <div>
+                                                        <h3 className="text-lg font-semibold text-gray-900">{company.company_name}</h3>
+                                                        <div className="flex flex-wrap items-center gap-3 mt-1">
+                                                            <StatusPill status={company.status || 'active'} />
+                                                            <span className="text-sm text-gray-600">
+                                                                {company.industry}
+                                                            </span>
+                                                            <span className="text-sm text-gray-500">
+                                                                {`${company.city}, ${company.country}`}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
                                             <div className="flex items-center gap-8">
                                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                                     <div className="text-center">
                                                         <div className="flex items-center justify-center gap-1.5">
                                                             <Users className="w-4 h-4 text-gray-400" />
-                                                            <span className="font-semibold text-gray-900">{company.employees}</span>
+                                                            <span className="font-semibold text-gray-900">{company.employee_count}</span>
                                                         </div>
                                                         <div className="text-xs text-gray-500 mt-1">Employees</div>
                                                     </div>
                                                     <div className="text-center">
-                                                        <div className="font-semibold text-gray-900">{company.plan}</div>
-                                                        <div className="text-xs text-gray-500 mt-1">Plan</div>
+                                                        <div className="font-semibold text-gray-900">{company.trading_name}</div>
+                                                        <div className="text-xs text-gray-500 mt-1">Trading As</div>
                                                     </div>
                                                     <div className="text-center hidden md:block">
                                                         <div className="font-semibold text-gray-900">
-                                                            {format(new Date(company.lastActive), 'MMM d, yyyy')}
+                                                            {format(new Date(company.created_at), 'MMM d, yyyy')}
                                                         </div>
-                                                        <div className="text-xs text-gray-500 mt-1">Last Active</div>
+                                                        <div className="text-xs text-gray-500 mt-1">Created Date</div>
                                                     </div>
                                                 </div>
 
@@ -425,7 +387,7 @@ export const Companies: React.FC = () => {
                 title="Delete Company"
             >
                 <div className="space-y-4">
-                    <p>Are you sure you want to delete {selectedCompany?.name}? This action cannot be undone.</p>
+                    <p>Are you sure you want to delete {selectedCompany?.company_name}? This action cannot be undone.</p>
                     <div className="flex justify-end space-x-2 mt-6">
                         <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
                             Cancel
@@ -447,58 +409,40 @@ export const Companies: React.FC = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <h4 className="text-sm font-medium text-secondary-text">Contact Person</h4>
-                                <p>{selectedCompany.contactPerson}</p>
+                                <p>{selectedCompany.contact_person_name}</p>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-medium text-secondary-text">Position</h4>
+                                <p>{selectedCompany.contact_person_position}</p>
                             </div>
                             <div>
                                 <h4 className="text-sm font-medium text-secondary-text">Email</h4>
-                                <p>{selectedCompany.email}</p>
+                                <p>{selectedCompany.contact_person_email}</p>
                             </div>
                             <div>
                                 <h4 className="text-sm font-medium text-secondary-text">Phone</h4>
-                                <p>{selectedCompany.phone}</p>
-                            </div>
-                            <div>
-                                <h4 className="text-sm font-medium text-secondary-text">Location</h4>
-                                <p>{selectedCompany.location}</p>
+                                <p>{selectedCompany.contact_person_phone}</p>
                             </div>
                         </div>
 
                         <div className="border-t pt-4">
-                            <h3 className="font-medium mb-3">Subscription Details</h3>
+                            <h3 className="font-medium mb-3">Company Information</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <h4 className="text-sm font-medium text-secondary-text">Plan</h4>
-                                    <p>{selectedCompany.plan}</p>
+                                    <h4 className="text-sm font-medium text-secondary-text">Trading Name</h4>
+                                    <p>{selectedCompany.trading_name}</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-medium text-secondary-text">Status</h4>
-                                    <StatusPill status={selectedCompany.status} />
+                                    <h4 className="text-sm font-medium text-secondary-text">Industry</h4>
+                                    <p>{selectedCompany.industry}</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-medium text-secondary-text">Start Date</h4>
-                                    <p>{format(new Date(selectedCompany.subscriptionStart), 'MMM d, yyyy')}</p>
+                                    <h4 className="text-sm font-medium text-secondary-text">Website</h4>
+                                    <p>{selectedCompany.website}</p>
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-medium text-secondary-text">End Date</h4>
-                                    <p>{format(new Date(selectedCompany.subscriptionEnd), 'MMM d, yyyy')}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="border-t pt-4">
-                            <h3 className="font-medium mb-3">Usage Statistics</h3>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <h4 className="text-sm font-medium text-secondary-text">Messages</h4>
-                                    <p>{selectedCompany.usage.messages.toLocaleString()}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-medium text-secondary-text">Storage (GB)</h4>
-                                    <p>{selectedCompany.usage.storage}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-medium text-secondary-text">API Calls</h4>
-                                    <p>{selectedCompany.usage.api_calls.toLocaleString()}</p>
+                                    <h4 className="text-sm font-medium text-secondary-text">Location</h4>
+                                    <p>{`${selectedCompany.city}, ${selectedCompany.country}`}</p>
                                 </div>
                             </div>
                         </div>
@@ -515,6 +459,7 @@ export const Companies: React.FC = () => {
                     </div>
                 )}
             </Modal>
+
         </motion.div>
     );
 };
