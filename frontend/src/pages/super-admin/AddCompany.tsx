@@ -1,18 +1,106 @@
-import { useState } from 'react'
-import { Button } from "../../components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-import { Input } from "../../components/ui/input"
+import { useState, ChangeEvent } from 'react'
+import { Button } from "../../components/ui/Button"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card"
+import { Input } from "../../components/ui/Input"
 import { Label } from "../../components/ui/label"
 import { Textarea } from "../../components/ui/textarea"
 import { Select } from "../../components/ui/Select"
 import { Calendar } from "../../components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover"
 import { format } from 'date-fns'
-import { CalendarIcon } from "lucide-react"
 
-const FileUpload = ({ onFileSelected, className }) => {
-  const handleFileChange = (event) => {
-    const file = event.target.files[0]
+interface FileUploadProps {
+  onFileSelected: (file: File) => void;
+  className?: string;
+}
+
+interface FormData {
+  username: string;
+  password: string;
+  company_name: string;
+  trading_name: string;
+  registration_number: string;
+  tax_number: string;
+  industry: string;
+  founded_date: string;
+  company_type: string;
+  email: string;
+  phone: string;
+  fax: string;
+  website: string;
+  social_media_linkedin: string;
+  social_media_twitter: string;
+  social_media_facebook: string;
+  street_address: string;
+  building_name: string;
+  floor_number: string;
+  city: string;
+  state: string;
+  country: string;
+  postal_code: string;
+  mailing_address: string;
+  mailing_city: string;
+  mailing_state: string;
+  mailing_country: string;
+  mailing_postal_code: string;
+  contact_person_name: string;
+  contact_person_position: string;
+  contact_person_email: string;
+  contact_person_phone: string;
+  contact_person_mobile: string;
+  secondary_contact_name: string;
+  secondary_contact_position: string;
+  secondary_contact_email: string;
+  secondary_contact_phone: string;
+  employee_count: string;
+  annual_revenue: string;
+  company_description: string;
+  business_hours: string;
+  year_end_date: string;
+  bank_name: string;
+  bank_account_name: string;
+  bank_account_number: string;
+  bank_swift_code: string;
+  logo_url: string;
+  parent_company_name: string;
+  subsidiary_companies: string;
+  operation_countries: string;
+  languages_spoken: string;
+  certifications: string;
+  licenses: string;
+  status: string;
+  listing_status: string;
+  credit_rating: string;
+  compliance_status: string;
+  last_audit_date: string;
+  license_renewal_date: string;
+  insurance_renewal_date: string;
+  insurance_provider: string;
+  insurance_policy_number: string;
+  insurance_expiry_date: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  updated_by: string;
+  is_verified: boolean;
+  verification_date: string;
+  two_factor_enabled: boolean;
+  two_factor_secret: string;
+  backup_codes: string;
+}
+
+interface FormErrors {
+  username?: string;
+  password?: string;
+  company_name?: string;
+  email?: string;
+  phone?: string;
+  [key: string]: string | undefined;
+}
+
+const FileUpload = ({ onFileSelected, className }: FileUploadProps) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (file) {
       onFileSelected(file)
     }
@@ -27,7 +115,7 @@ const FileUpload = ({ onFileSelected, className }) => {
         onChange={handleFileChange}
       />
       <label htmlFor="file-upload" className="cursor-pointer">
-        <Button variant="outline">
+        <Button variant="secondary">
           Upload Logo
         </Button>
       </label>
@@ -36,7 +124,9 @@ const FileUpload = ({ onFileSelected, className }) => {
 }
 
 export default function CompanyRegistrationForm() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
+    username: '',
+    password: '',
     company_name: '',
     trading_name: '',
     registration_number: '',
@@ -110,9 +200,9 @@ export default function CompanyRegistrationForm() {
   })
 
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false)
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<FormErrors>({})
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData({
       ...formData,
@@ -120,14 +210,14 @@ export default function CompanyRegistrationForm() {
     })
   }
 
-  const handleDateChange = (name, date) => {
+  const handleDateChange = (name: keyof FormData, date: Date | undefined) => {
     setFormData({
       ...formData,
       [name]: date ? format(date, 'yyyy-MM-dd') : '',
     })
   }
 
-  const handleFileSelected = (file) => {
+  const handleFileSelected = (file: File) => {
     setFormData({
       ...formData,
       logo_url: file.name,
@@ -135,7 +225,9 @@ export default function CompanyRegistrationForm() {
   }
 
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors: FormErrors = {}
+    if (!formData.username) newErrors.username = 'Username is required'
+    if (!formData.password) newErrors.password = 'Password is required'
     if (!formData.company_name) newErrors.company_name = 'Company name is required'
     if (!formData.email) newErrors.email = 'Email is required'
     if (!formData.phone) newErrors.phone = 'Phone is required'
@@ -143,7 +235,7 @@ export default function CompanyRegistrationForm() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (validateForm()) {
       alert('Form submitted successfully!')
@@ -152,24 +244,49 @@ export default function CompanyRegistrationForm() {
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">
+    <Card className="w-full max-w-7xl mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Company Registration Form</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="company_name">Company Name</Label>
               <Input
-                id="company_name"
-                name="company_name"
-                value={formData.company_name}
-                onChange={handleChange}
-                className="mt-1"
-                placeholder="Enter company name"
+              id="company_name"
+              name="company_name"
+              value={formData.company_name}
+              onChange={handleChange}
+              className="mt-1"
+              placeholder="Enter company name"
               />
               {errors.company_name && <p className="text-red-500 text-sm mt-1">{errors.company_name}</p>}
+            </div>
+            <div>
+              <Label htmlFor="username">Username</Label>
+              <Input
+              id="username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              className="mt-1"
+              placeholder="Enter username"
+              />
+              {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
+            </div>
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+              id="password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="mt-1"
+              placeholder="Enter password"
+              />
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             </div>
             <div>
               <Label htmlFor="trading_name">Trading Name</Label>
@@ -220,9 +337,9 @@ export default function CompanyRegistrationForm() {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
-                    variant={"outline"}
+                    variant={"secondary"}
                     className="w-full justify-start text-left font-normal"
-                  >
+                    >
                     {formData.founded_date ? format(new Date(formData.founded_date), 'PPP') : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
@@ -348,7 +465,7 @@ export default function CompanyRegistrationForm() {
 
           {showAdditionalDetails && (
             <div className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="street_address">Street Address</Label>
                   <Input
@@ -629,7 +746,7 @@ export default function CompanyRegistrationForm() {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant={"outline"}
+                        variant={"secondary"}
                         className="w-full justify-start text-left font-normal"
                       >
                         {formData.year_end_date ? format(new Date(formData.year_end_date), 'PPP') : <span>Pick a date</span>}
@@ -803,9 +920,9 @@ export default function CompanyRegistrationForm() {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant={"outline"}
+                        variant={"secondary"}
                         className="w-full justify-start text-left font-normal"
-                      >
+                        >
                         {formData.last_audit_date ? format(new Date(formData.last_audit_date), 'PPP') : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
@@ -823,9 +940,9 @@ export default function CompanyRegistrationForm() {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant={"outline"}
+                        variant={"secondary"}
                         className="w-full justify-start text-left font-normal"
-                      >
+                        >
                         {formData.license_renewal_date ? format(new Date(formData.license_renewal_date), 'PPP') : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
@@ -843,9 +960,9 @@ export default function CompanyRegistrationForm() {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant={"outline"}
+                        variant={"secondary"}
                         className="w-full justify-start text-left font-normal"
-                      >
+                        >
                         {formData.insurance_renewal_date ? format(new Date(formData.insurance_renewal_date), 'PPP') : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
@@ -885,9 +1002,9 @@ export default function CompanyRegistrationForm() {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant={"outline"}
+                        variant={"secondary"}
                         className="w-full justify-start text-left font-normal"
-                      >
+                        >
                         {formData.insurance_expiry_date ? format(new Date(formData.insurance_expiry_date), 'PPP') : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
