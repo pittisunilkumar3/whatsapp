@@ -17,7 +17,9 @@ async function up() {
 	`;
 	
 	try {
+		await db.query('SET FOREIGN_KEY_CHECKS = 0');
 		await db.query(query);
+		await db.query('SET FOREIGN_KEY_CHECKS = 1');
 		console.log('Company roles table created successfully');
 	} catch (error) {
 		console.error('Error creating company roles table:', error);
@@ -29,7 +31,9 @@ async function down() {
 	const query = 'DROP TABLE IF EXISTS company_roles';
 	
 	try {
+		await db.query('SET FOREIGN_KEY_CHECKS = 0');
 		await db.query(query);
+		await db.query('SET FOREIGN_KEY_CHECKS = 1');
 		console.log('Company roles table dropped successfully');
 	} catch (error) {
 		console.error('Error dropping company roles table:', error);

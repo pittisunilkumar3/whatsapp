@@ -3,9 +3,9 @@ const db = require('../../db');
 class CompanyEmployeeRole {
 	static async create(data) {
 		const query = `INSERT INTO company_employee_roles 
-					  (company_id, role_id, staff_id, is_active, updated_at) 
+					  (company_id, role_id, company_employee_id, is_active, updated_at) 
 					  VALUES (?, ?, ?, ?, CURDATE())`;
-		const values = [data.company_id, data.role_id, data.staff_id, data.is_active || 0];
+		const values = [data.company_id, data.role_id, data.company_employee_id, data.is_active || 0];
 		return db.query(query, values);
 	}
 
@@ -19,9 +19,9 @@ class CompanyEmployeeRole {
 		return db.query(query, [companyId]);
 	}
 
-	static async findByStaffId(staffId) {
-		const query = `SELECT * FROM company_employee_roles WHERE staff_id = ?`;
-		return db.query(query, [staffId]);
+	static async findByEmployeeId(employeeId) {
+		const query = `SELECT * FROM company_employee_roles WHERE company_employee_id = ?`;
+		return db.query(query, [employeeId]);
 	}
 
 	static async findAll(filters = {}) {
@@ -38,9 +38,9 @@ class CompanyEmployeeRole {
 			values.push(filters.role_id);
 		}
 
-		if (filters.staff_id) {
-			query += ` AND staff_id = ?`;
-			values.push(filters.staff_id);
+		if (filters.company_employee_id) {
+			query += ` AND company_employee_id = ?`;
+			values.push(filters.company_employee_id);
 		}
 
 		if (filters.is_active !== undefined) {
@@ -53,10 +53,10 @@ class CompanyEmployeeRole {
 
 	static async update(id, data) {
 		const query = `UPDATE company_employee_roles 
-					  SET company_id = ?, role_id = ?, staff_id = ?, 
+					  SET company_id = ?, role_id = ?, company_employee_id = ?, 
 						  is_active = ?, updated_at = CURDATE() 
 					  WHERE id = ?`;
-		const values = [data.company_id, data.role_id, data.staff_id, data.is_active, id];
+		const values = [data.company_id, data.role_id, data.company_employee_id, data.is_active, id];
 		return db.query(query, values);
 	}
 

@@ -6,13 +6,13 @@ CREATE TABLE company_employee_roles (
 	id INT PRIMARY KEY AUTO_INCREMENT,
 	company_id INT NOT NULL,
 	role_id INT DEFAULT NULL,
-	staff_id INT DEFAULT NULL,
+	company_employee_id INT DEFAULT NULL,
 	is_active INT DEFAULT 0,
 	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	updated_at DATE DEFAULT NULL,
 	FOREIGN KEY (company_id) REFERENCES companies(id),
 	FOREIGN KEY (role_id) REFERENCES company_roles(id),
-	FOREIGN KEY (staff_id) REFERENCES staff(id)
+	FOREIGN KEY (company_employee_id) REFERENCES company_employee(id)
 )
 ```
 
@@ -26,7 +26,7 @@ CREATE TABLE company_employee_roles (
 {
 	"company_id": 1,
 	"role_id": 1,
-	"staff_id": 1,
+	"company_employee_id": 1,
 	"is_active": 1
 }
 ```
@@ -39,7 +39,7 @@ CREATE TABLE company_employee_roles (
 		"id": 1,
 		"company_id": 1,
 		"role_id": 1,
-		"staff_id": 1,
+		"company_employee_id": 1,
 		"is_active": 1
 	}
 }
@@ -51,7 +51,7 @@ CREATE TABLE company_employee_roles (
 - **Query Parameters:**
   - `company_id`: Filter by company ID (optional)
   - `role_id`: Filter by role ID (optional)
-  - `staff_id`: Filter by staff ID (optional)
+  - `company_employee_id`: Filter by employee ID (optional)
   - `is_active`: Filter by active status (optional)
 - **Success Response:**
 ```json
@@ -62,7 +62,7 @@ CREATE TABLE company_employee_roles (
 			"id": 1,
 			"company_id": 1,
 			"role_id": 1,
-			"staff_id": 1,
+			"company_employee_id": 1,
 			"is_active": 1,
 			"created_at": "2024-03-22T10:00:00.000Z",
 			"updated_at": "2024-03-22"
@@ -82,7 +82,7 @@ CREATE TABLE company_employee_roles (
 		"id": 1,
 		"company_id": 1,
 		"role_id": 1,
-		"staff_id": 1,
+		"company_employee_id": 1,
 		"is_active": 1,
 		"created_at": "2024-03-22T10:00:00.000Z",
 		"updated_at": "2024-03-22"
@@ -90,8 +90,8 @@ CREATE TABLE company_employee_roles (
 }
 ```
 
-### Get Roles by Staff ID
-- **URL:** `/api/company-employee-roles/staff/:staffId`
+### Get Roles by Employee ID
+- **URL:** `/api/company-employee-roles/employee/:employeeId`
 - **Method:** `GET`
 - **Success Response:**
 ```json
@@ -102,7 +102,7 @@ CREATE TABLE company_employee_roles (
 			"id": 1,
 			"company_id": 1,
 			"role_id": 1,
-			"staff_id": 1,
+			"company_employee_id": 1,
 			"is_active": 1,
 			"created_at": "2024-03-22T10:00:00.000Z",
 			"updated_at": "2024-03-22"
@@ -119,7 +119,7 @@ CREATE TABLE company_employee_roles (
 {
 	"company_id": 1,
 	"role_id": 2,
-	"staff_id": 1,
+	"company_employee_id": 1,
 	"is_active": 1
 }
 ```
@@ -132,7 +132,7 @@ CREATE TABLE company_employee_roles (
 		"id": 1,
 		"company_id": 1,
 		"role_id": 2,
-		"staff_id": 1,
+		"company_employee_id": 1,
 		"is_active": 1
 	}
 }

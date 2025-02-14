@@ -60,10 +60,10 @@ router.get('/:id', async (req, res) => {
 	}
 });
 
-// Get roles by staff ID
-router.get('/staff/:staffId', async (req, res) => {
+// Get roles by employee ID
+router.get('/employee/:employeeId', async (req, res) => {
 	try {
-		const [roles] = await CompanyEmployeeRole.findByStaffId(req.params.staffId);
+		const [roles] = await CompanyEmployeeRole.findByEmployeeId(req.params.employeeId);
 		res.json({
 			success: true,
 			data: roles
@@ -71,7 +71,7 @@ router.get('/staff/:staffId', async (req, res) => {
 	} catch (error) {
 		res.status(500).json({
 			success: false,
-			message: 'Error fetching staff roles',
+			message: 'Error fetching employee roles',
 			error: error.message
 		});
 	}
