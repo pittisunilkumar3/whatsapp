@@ -29,6 +29,7 @@ const navigationByRole: Record<Role, Array<{ name: string; href: string; icon: a
     { name: 'Dashboard', href: '/superadmin/dashboard', icon: LayoutDashboardIcon },
     { name: 'Companies', href: '/superadmin/companies', icon: UsersIcon },
     { name: 'Email Integration', href: '/superadmin/email-integration', icon: MailIcon },
+    { name: 'Role Management', href: '/superadmin/role-management', icon: UsersIcon },
     { name: 'Permissions', href: '/superadmin/permissions', icon: SettingsIcon },
     { name: 'Audit Logs', href: '/superadmin/audit-logs', icon: CircleDotIcon },
     { name: 'Settings', href: '/superadmin/settings', icon: SettingsIcon },
@@ -48,6 +49,7 @@ const navigationByRole: Record<Role, Array<{ name: string; href: string; icon: a
       ]
     },
     { name: 'Employees', href: '/company-admin/employees', icon: UsersIcon },
+    { name: 'Role Management', href: '/company-admin/role-management', icon: UsersIcon },
     { name: 'Analytics', href: '/company-admin/analytics', icon: BarChartIcon },
     { name: 'Settings', href: '/company-admin/settings', icon: SettingsIcon },
     { name: 'Employee Permissions', href: '/company-admin/employee-permissions', icon: SettingsIcon },
