@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -256,6 +256,11 @@ export const AuditLogs: React.FC = () => {
 	});
 	const [isLoading, setIsLoading] = useState(false);
 	const [showFilters, setShowFilters] = useState(false);
+	const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
+	const [autoRefresh, setAutoRefresh] = useState(false);
+	const [refreshInterval, setRefreshInterval] = useState(30);
+	const [isError, setIsError] = useState(false);
+	const [errorMessage, setErrorMessage] = useState('');
 
 	const handleDateRangeChange = (value: string) => {
 		const now = new Date();
@@ -308,23 +313,6 @@ export const AuditLogs: React.FC = () => {
 		const matchesDate = logDate.getTime() >= startOfDay.getTime() && 
 							logDate.getTime() <= endOfDay.getTime();
 
-		// Debug logging
-		console.log({
-			log: {
-				id: log.id,
-				timestamp: log.timestamp,
-				logDate: logDate.toISOString()
-			},
-			filters: {
-				startOfDay: startOfDay.toISOString(),
-				endOfDay: endOfDay.toISOString(),
-				matchesDate,
-				matchesSeverity,
-				matchesResource,
-				matchesSearch
-			}
-		});
-
 		return matchesSearch && matchesSeverity && matchesResource && matchesDate;
 	});
 
@@ -336,6 +324,7 @@ export const AuditLogs: React.FC = () => {
 
 	const handleExport = useCallback(async () => {
 		setIsLoading(true);
+		setIsError(false);
 		try {
 			const exportData = filteredLogs.map(log => ({
 				...log,
@@ -343,29 +332,77 @@ export const AuditLogs: React.FC = () => {
 				user: `${log.user.first_name} ${log.user.last_name} (${log.user.email})`,
 			}));
 			
-			const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+			let content: string;
+			let mimeType: string;
+			let fileExtension: string;
+
+			if (exportFormat === 'csv') {
+				const headers = ['ID', 'Action', 'User', 'Resource', 'Details', 'Timestamp', 'Severity', 'IP Address'];
+				const rows = exportData.map(log => [
+					log.id,
+					log.action,
+					log.user,
+					log.resource,
+					log.details,
+					log.timestamp,
+					log.severity,
+					log.ipAddress || ''
+				]);
+				content = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+				mimeType = 'text/csv';
+				fileExtension = 'csv';
+			} else {
+				content = JSON.stringify(exportData, null, 2);
+				mimeType = 'application/json';
+				fileExtension = 'json';
+			}
+			
+			const blob = new Blob([content], { type: mimeType });
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
-			a.download = `audit-logs-${format(new Date(), 'yyyy-MM-dd')}.json`;
+			a.download = `audit-logs-${format(new Date(), 'yyyy-MM-dd')}.${fileExtension}`;
 			document.body.appendChild(a);
 			a.click();
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 		} catch (error) {
 			console.error('Export failed:', error);
+			setIsError(true);
+			setErrorMessage('Failed to export logs. Please try again.');
 		} finally {
 			setIsLoading(false);
 		}
-	}, [filteredLogs]);
+	}, [filteredLogs, exportFormat]);
 
 	const refreshLogs = useCallback(() => {
 		setIsLoading(true);
-		// Simulate API call
-		setTimeout(() => {
+		setIsError(false);
+		try {
+			// Simulate API call
+			setTimeout(() => {
+				// In real implementation, this would be an API call
+				setIsLoading(false);
+			}, 1000);
+		} catch (error) {
+			console.error('Refresh failed:', error);
+			setIsError(true);
+			setErrorMessage('Failed to refresh logs. Please try again.');
 			setIsLoading(false);
-		}, 1000);
+		}
 	}, []);
+
+	useEffect(() => {
+		let intervalId: NodeJS.Timeout;
+		if (autoRefresh) {
+			intervalId = setInterval(() => {
+				refreshLogs();
+			}, refreshInterval * 1000);
+		}
+		return () => {
+			if (intervalId) clearInterval(intervalId);
+		};
+	}, [autoRefresh, refreshInterval, refreshLogs]);
 	return (
 		<div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
 			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -446,99 +483,124 @@ export const AuditLogs: React.FC = () => {
 									}
 									onChange={(e) => handleDateRangeChange(e.target.value)}
 								>
-									<option value="24h">Last 24 hours</option>
-									<option value="7d">Last 7 days</option>
-									<option value="30d">Last 30 days</option>
+									<option value="24h">Last 24 Hours</option>
+									<option value="7d">Last 7 Days</option>
+									<option value="30d">Last 30 Days</option>
 								</Select>
+							</div>
+
+							<div className="flex items-center gap-4">
+								<Select
+									value={exportFormat}
+									onChange={(e) => setExportFormat(e.target.value as 'json' | 'csv')}
+								>
+									<option value="json">JSON</option>
+									<option value="csv">CSV</option>
+								</Select>
+							</div>
+
+							<div className="flex items-center gap-4">
+								<label className="flex items-center gap-2">
+									<input
+										type="checkbox"
+										checked={autoRefresh}
+										onChange={(e) => setAutoRefresh(e.target.checked)}
+										className="form-checkbox h-4 w-4 text-primary"
+									/>
+									<span>Auto Refresh</span>
+								</label>
+								{autoRefresh && (
+									<Select
+										value={refreshInterval}
+										onChange={(e) => setRefreshInterval(Number(e.target.value))}
+										className="w-32"
+									>
+										<option value="30">30 seconds</option>
+										<option value="60">1 minute</option>
+										<option value="300">5 minutes</option>
+									</Select>
+								)}
 							</div>
 						</div>
 					)}
 				</div>
 			</Card>
 
-			<div className="space-y-4">
-				{paginatedLogs.map((log) => {
-					const Icon = actionIcons[log.action as keyof typeof actionIcons] || AlertCircle;
-					return (
-						<Card key={log.id} className="p-4 sm:p-6 hover:shadow-lg transition-all duration-200">
-							<div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-								<div className="flex items-start gap-3 sm:gap-4 w-full">
-									<div className={`p-2 rounded-lg ${severityColors[log.severity]} mt-1 flex-shrink-0`}>
-										<Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-									</div>
-									<div className="flex-1 min-w-0">
-										<h3 className="text-sm sm:text-base font-semibold">{log.action}</h3>
-										<p className="text-xs sm:text-sm text-secondary-text mt-1">{log.details}</p>
-										<div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-secondary-text">
-											<span>By: {`${log.user.first_name} ${log.user.last_name}`}</span>
-											<span>Role: {log.user.role}</span>
-											<span>Resource: {log.resource}</span>
-											{log.ipAddress && <span>IP: {log.ipAddress}</span>}
-										</div>
-										{log.changes && (
-											<div className="mt-3 text-xs sm:text-sm">
-												<div className="font-medium text-gray-700">Changes:</div>
-												<pre className="mt-1 p-2 bg-gray-50 rounded-md overflow-x-auto text-xs">
-													{JSON.stringify(log.changes, null, 2)}
-												</pre>
+			<div className="mt-4 space-y-4">
+				{isLoading ? (
+					<div className="flex justify-center items-center py-8">
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+					</div>
+				) : filteredLogs.length === 0 ? (
+					<div className="text-center py-8 text-gray-500">
+						<AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+						<p>No audit logs found matching your criteria</p>
+					</div>
+				) : (
+					<div className="space-y-4">
+						{paginatedLogs.map((log) => {
+							const ActionIcon = actionIcons[log.action as keyof typeof actionIcons] || AlertCircle;
+							return (
+								<div key={log.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+									<div className="flex items-start justify-between">
+										<div className="flex items-start space-x-3">
+											<div className={`p-2 rounded-full ${severityColors[log.severity]}`}>
+												<ActionIcon className="w-5 h-5" />
 											</div>
-										)}
+											<div>
+												<h3 className="font-medium text-gray-900">{log.action}</h3>
+												<p className="text-sm text-gray-600 mt-1">{log.details}</p>
+												<div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-500">
+													<span className="flex items-center gap-1">
+														<Calendar className="w-4 h-4" />
+														{format(new Date(log.timestamp), 'PPpp')}
+													</span>
+													<span>•</span>
+													<span>{log.user.first_name} {log.user.last_name}</span>
+													<span>•</span>
+													<span>{log.resource}</span>
+													{log.ipAddress && (
+														<>
+															<span>•</span>
+															<span>IP: {log.ipAddress}</span>
+														</>
+													)}
+												</div>
+											</div>
+										</div>
+										<span className={`px-2 py-1 rounded-full text-xs font-medium ${severityColors[log.severity]}`}>
+											{log.severity}
+										</span>
 									</div>
 								</div>
-								<div className="text-right text-xs sm:text-sm w-full sm:w-auto">
-									<span className="text-secondary-text">
-										{format(new Date(log.timestamp), 'MMM d, yyyy h:mm a')}
-									</span>
-									{log.userAgent && (
-										<div className="text-xs text-gray-400 mt-1">
-											{log.userAgent}
-										</div>
-									)}
-								</div>
+							);
+						})}
+
+						<div className="flex items-center justify-between border-t pt-4">
+							<p className="text-sm text-gray-700">
+								Showing <span className="font-medium">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> to{' '}
+								<span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)}</span> of{' '}
+								<span className="font-medium">{filteredLogs.length}</span> results
+							</p>
+							<div className="flex items-center space-x-2">
+								<Button
+									variant="ghost"
+									onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+									disabled={currentPage === 1}
+								>
+									<ChevronLeft className="w-5 h-5" />
+								</Button>
+								<span className="text-sm text-gray-700">
+									Page {currentPage} of {totalPages}
+								</span>
+								<Button
+									variant="ghost"
+									onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+									disabled={currentPage === totalPages}
+								>
+									<ChevronRight className="w-5 h-5" />
+								</Button>
 							</div>
-						</Card>
-					);
-				})}
-
-				{filteredLogs.length === 0 && (
-					<Card className="p-6 sm:p-8 text-center">
-						<AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-						<h3 className="text-base sm:text-lg font-medium text-gray-900">No logs found</h3>
-						<p className="text-sm text-gray-500 mt-1">
-							Try adjusting your search or filter criteria
-						</p>
-					</Card>
-				)}
-
-				{filteredLogs.length > ITEMS_PER_PAGE && (
-					<div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-						<div className="text-xs sm:text-sm text-gray-500 order-2 sm:order-1">
-							Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} of {filteredLogs.length} results
-						</div>
-						<div className="flex items-center gap-2 order-1 sm:order-2">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-								disabled={currentPage === 1}
-								className="w-10 sm:w-auto"
-							>
-								<ChevronLeft className="w-4 h-4" />
-								<span className="hidden sm:inline ml-2">Previous</span>
-							</Button>
-							<span className="text-xs sm:text-sm text-gray-700">
-								Page {currentPage} of {totalPages}
-							</span>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-								disabled={currentPage === totalPages}
-								className="w-10 sm:w-auto"
-							>
-								<span className="hidden sm:inline mr-2">Next</span>
-								<ChevronRight className="w-4 h-4" />
-							</Button>
 						</div>
 					</div>
 				)}
