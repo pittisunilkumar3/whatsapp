@@ -46,7 +46,7 @@ Base URL: `/api/testsuperadmin`
 ## Sidebar Menu Structure
 
 ### Get Sidebar Menu with Permissions
-- **GET** `/sidebar-menu/:roleId`
+- **GET** `/sidebar-menu-permissions/:roleId`
 - **Description:** Returns a hierarchical structure of menus with their sub-menus and associated permissions for a specific role
 - **Parameters:**
 	- `roleId`: ID of the role to get permissions for
@@ -95,6 +95,11 @@ Base URL: `/api/testsuperadmin`
 ### Get All Menus
 - **GET** `/menus`
 - **Response:** Returns menus with their associated sub-menus
+
+### Get Menu by ID
+- **GET** `/menus/:id`
+- **Response:** Returns a single menu object with its associated sub-menus
+- **Error:** 404 if menu not found
 
 ### Update Menu
 - **PUT** `/menus/:id`

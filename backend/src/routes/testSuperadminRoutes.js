@@ -101,6 +101,29 @@ router.get('/menus', async (req, res) => {
 	}
 });
 
+// Get menu by ID
+router.get('/menus/:id', async (req, res) => {
+    try {
+        const menu = await TestSuperadminSidebarMenu.findByPk(req.params.id, {
+            include: [{
+                model: TestSuperadminSidebarSubMenu,
+                as: 'test_superadmin_sidebar_submenus',
+                where: { is_active: 1 },
+                required: false
+            }]
+        });
+        
+        if (!menu) {
+            return res.status(404).json({ error: 'Menu not found' });
+        }
+        
+        res.json(menu);
+    } catch (error) {
+        console.error('Error fetching menu:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.put('/menus/:id', async (req, res) => {
 	try {
 		const menu = await TestSuperadminSidebarMenu.findByPk(req.params.id);
@@ -218,31 +241,9 @@ router.delete('/permissions/:id', async (req, res) => {
 	}
 });
 
-// Get single menu by ID
-router.get('/sidebar-menu/single/:id', async (req, res) => {
-	try {
-		const menu = await TestSuperadminSidebarMenu.findByPk(req.params.id, {
-			include: [{
-				model: TestSuperadminSidebarSubMenu,
-				as: 'test_superadmin_sidebar_submenus',
-				where: { is_active: 1 },
-				required: false
-			}]
-		});
-		
-		if (!menu) {
-			return res.status(404).json({ error: 'Menu not found' });
-		}
-		
-		res.json(menu);
-	} catch (error) {
-		console.error('Error fetching menu:', error);
-		res.status(500).json({ error: error.message });
-	}
-});
-
 // Sidebar menu with permissions endpoint
-router.get('/sidebar-menu/:roleId', async (req, res) => {
+router.get('/sidebar-menu-permissions/:roleId', async (req, res) => {
+
 	try {
 		console.log('=== Sidebar Menu Route ===');
 		console.log('Role ID:', req.params.roleId);
