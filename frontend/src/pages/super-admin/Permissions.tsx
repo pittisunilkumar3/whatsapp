@@ -1,110 +1,43 @@
-import React, { useState } from 'react';
-import { Card } from '~/components/ui/Card';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Checkbox } from '~/components/ui/Checkbox';
 import { Button } from '~/components/ui/Button';
 import { NotificationToast } from '~/components/ui/NotificationToast';
-import { Save, Shield } from 'lucide-react';
+import { SaveAll, ShieldCheck } from 'lucide-react';
 
-interface PermissionRow {
-	module: string;
-	features: {
-		name: string;
-		permissions: {
-			view: boolean;
-			add: boolean;
-			edit: boolean;
-			delete: boolean;
-		};
-	}[];
+
+interface Permission {
+	canView: boolean;
+	canAdd: boolean;
+	canEdit: boolean;
+	canDelete: boolean;
 }
 
-const permissionsData: PermissionRow[] = [
-	{
-		module: 'Student Information',
-		features: [
-			{
-				name: 'Student',
-				permissions: { view: true, add: true, edit: true, delete: true }
-			},
-			{
-				name: 'Import Student',
-				permissions: { view: true, add: false, edit: false, delete: false }
-			},
-			{
-				name: 'Student Categories',
-				permissions: { view: true, add: true, edit: true, delete: true }
-			},
-			{
-				name: 'Student Houses',
-				permissions: { view: true, add: true, edit: true, delete: true }
-			},
-			{
-				name: 'Disable Student',
-				permissions: { view: true, add: false, edit: false, delete: false }
-			},
-			{
-				name: 'Student Timeline',
-				permissions: { view: true, add: true, edit: true, delete: true }
-			},
-			{
-				name: 'Disable Reason',
-				permissions: { view: true, add: true, edit: true, delete: true }
-			}
-		]
-	},
-	{
-		module: 'Fees Collection',
-		features: [
-			{
-				name: 'Collect Fees',
-				permissions: { view: true, add: true, edit: false, delete: true }
-			},
-			{
-				name: 'Fees Carry Forward',
-				permissions: { view: true, add: false, edit: false, delete: false }
-			},
-			{
-				name: 'Fees Master',
-				permissions: { view: true, add: true, edit: true, delete: true }
-			},
-			{
-				name: 'Fees Group',
-				permissions: { view: true, add: true, edit: true, delete: true }
-			},
-			{
-				name: 'Fees Group Assign',
-				permissions: { view: true, add: false, edit: false, delete: false }
-			},
-			{
-				name: 'Fees Type',
-				permissions: { view: true, add: true, edit: true, delete: true }
-			},
-			{
-				name: 'Fees Discount',
-				permissions: { view: true, add: true, edit: true, delete: true }
-			},
-			{
-				name: 'Fees Discount Assign',
-				permissions: { view: true, add: false, edit: false, delete: false }
-			},
-			{
-				name: 'Search Fees Payment',
-				permissions: { view: true, add: false, edit: false, delete: false }
-			},
-			{
-				name: 'Search Due Fees',
-				permissions: { view: true, add: false, edit: false, delete: false }
-			},
-			{
-				name: 'Fees Reminder',
-				permissions: { view: true, add: false, edit: true, delete: false }
-			}
-		]
-	}
-];
+interface Submenu {
+	id: number;
+	menuName: string;
+	url: string;
+	key: string;
+	langKey: string;
+	level: number;
+	isActive: boolean;
+	permissions: Permission;
+}
+
+interface MenuModule {
+	id: number;
+	menuName: string;
+	icon: string;
+	langKey: string;
+	level: number;
+	isActive: boolean;
+	sidebarDisplay: boolean;
+	submenus: Submenu[];
+}
 
 export const Permissions: React.FC = () => {
-	const [permissions, setPermissions] = useState(permissionsData);
+	const { id } = useParams<{ id: string }>();
+	const [permissions, setPermissions] = useState<MenuModule[]>([]);
 	const [isSaving, setIsSaving] = useState(false);
 	const [notification, setNotification] = useState<{
 		type: 'success' | 'error';
@@ -116,12 +49,43 @@ export const Permissions: React.FC = () => {
 		isVisible: false
 	});
 
+
+
+
+	useEffect(() => {
+		const fetchPermissions = async () => {
+			try {
+				const response = await fetch(`http://localhost:5000/api/testsuperadmin/sidebar-menu-permissions/${id}`);
+				const data = await response.json();
+				setPermissions(data);
+			} catch (error) {
+				console.error('Failed to fetch permissions:', error);
+				setNotification({
+					type: 'error',
+					message: 'Failed to fetch permissions. Please try again.',
+					isVisible: true
+				});
+			}
+		};
+
+		if (id) {
+			fetchPermissions();
+		}
+	}, [id]);
+
 	const handleSave = async () => {
 		setIsSaving(true);
 		try {
-			// TODO: Implement API call to save permissions
-			await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated API call
-			console.log('Saving permissions:', permissions);
+			const response = await fetch(`http://localhost:5000/api/testsuperadmin/sidebar-menu-permissions/${id}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(permissions),
+			});
+
+			if (!response.ok) throw new Error('Failed to save permissions');
+
 			setNotification({
 				type: 'success',
 				message: 'Permissions saved successfully',
@@ -141,15 +105,13 @@ export const Permissions: React.FC = () => {
 
 	const handlePermissionChange = (
 		moduleIndex: number,
-		featureIndex: number,
-		permissionType: 'view' | 'add' | 'edit' | 'delete',
+		submenuIndex: number,
+		permissionType: keyof Permission,
 		checked: boolean
 	) => {
 		setPermissions(prevState => {
-			// Create a deep copy of the state
 			const newState = JSON.parse(JSON.stringify(prevState));
-			// Update the specific permission
-			newState[moduleIndex].features[featureIndex].permissions[permissionType] = checked;
+			newState[moduleIndex].submenus[submenuIndex].permissions[permissionType] = checked;
 			return newState;
 		});
 	};
@@ -166,7 +128,7 @@ export const Permissions: React.FC = () => {
 						<div className="space-y-2">
 							<div className="flex items-center gap-3">
 								<div className="p-2 bg-primary/10 rounded-lg">
-									<Shield className="w-6 h-6 text-primary" />
+									<ShieldCheck className="w-6 h-6 text-primary" />
 								</div>
 								<h1 className="text-2xl md:text-3xl font-bold text-gray-900">Permissions Management</h1>
 							</div>
@@ -190,34 +152,34 @@ export const Permissions: React.FC = () => {
 									</tr>
 								</thead>
 								<tbody className="bg-white divide-y divide-gray-200">
-									{permissions.map((row, moduleIndex) => (
-										<React.Fragment key={moduleIndex}>
-											<tr className="bg-gradient-to-r from-gray-50 to-white">
-												<td colSpan={5} className="px-6 py-4 text-sm font-semibold text-gray-800 border-b border-gray-200">
-													{row.module}
+									  {permissions.map((module, moduleIndex) => (
+										<React.Fragment key={module.id}>
+										  <tr className="bg-gradient-to-r from-gray-50 to-white">
+											<td colSpan={5} className="px-6 py-4 text-sm font-semibold text-gray-800 border-b border-gray-200">
+											  {module.menuName} (ID: {module.id})
+											</td>
+										  </tr>
+										  {module.submenus.map((submenu, submenuIndex) => (
+											<tr 
+											  key={submenu.id} 
+											  className="hover:bg-gray-50 transition-all duration-200 ease-in-out"
+											>
+											  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 border-r border-gray-100">
+												{submenu.menuName} (ID: {submenu.id})
+											  </td>
+											  {['canView', 'canAdd', 'canEdit', 'canDelete'].map((type) => (
+												<td key={type} className="px-6 py-4 whitespace-nowrap border-r border-gray-100 text-center">
+												  <Checkbox
+													checked={submenu.permissions[type as keyof Permission]}
+													onChange={(checked) => handlePermissionChange(moduleIndex, submenuIndex, type as keyof Permission, checked)}
+													className="cursor-pointer hover:scale-110 transition-transform duration-200"
+												  />
 												</td>
+											  ))}
 											</tr>
-											{row.features.map((feature, featureIndex) => (
-												<tr 
-													key={`${moduleIndex}-${featureIndex}`} 
-													className="hover:bg-gray-50 transition-all duration-200 ease-in-out"
-												>
-													<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 border-r border-gray-100">
-														{feature.name}
-													</td>
-													{['view', 'add', 'edit', 'delete'].map((type) => (
-														<td key={type} className="px-6 py-4 whitespace-nowrap border-r border-gray-100 text-center">
-															<Checkbox
-																checked={feature.permissions[type as keyof typeof feature.permissions]}
-																onChange={(checked) => handlePermissionChange(moduleIndex, featureIndex, type as 'view' | 'add' | 'edit' | 'delete', checked)}
-																className="cursor-pointer hover:scale-110 transition-transform duration-200"
-															/>
-														</td>
-													))}
-												</tr>
-											))}
+										  ))}
 										</React.Fragment>
-									))}
+									  ))}
 								</tbody>
 							</table>
 						</div>
@@ -241,7 +203,7 @@ export const Permissions: React.FC = () => {
 							) : (
 								<>
 									<span>Save Changes</span>
-									<Save className="h-5 w-5" />
+									<SaveAll className="h-5 w-5" />
 								</>
 							)}
 						</Button>
