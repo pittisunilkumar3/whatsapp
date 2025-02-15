@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -15,11 +16,18 @@ interface Permission {
 }
 
 interface Role {
+    id?: number;
     name: string;
     icon: any;
     description: string;
     color: string;
     permissions?: string[];
+}
+
+interface NewRole {
+    name: string;
+    description: string;
+    permissions: string[];
 }
 
 const permissions: Permission[] = [
@@ -51,6 +59,7 @@ const permissions: Permission[] = [
 
 const roles: Role[] = [
     {
+        id: 1,
         name: 'Super Admin',
         icon: Shield,
         description: 'Full system access and management',
@@ -58,6 +67,7 @@ const roles: Role[] = [
         permissions: ['manage_companies', 'manage_users', 'view_analytics']
     },
     {
+        id: 2,
         name: 'Company Admin',
         icon: Building,
         description: 'Company-level management and settings',
@@ -65,6 +75,7 @@ const roles: Role[] = [
         permissions: ['manage_users', 'view_analytics', 'manage_campaigns']
     },
     {
+        id: 3,
         name: 'Employee',
         icon: Users,
         description: 'Regular user access and operations',
@@ -73,18 +84,26 @@ const roles: Role[] = [
     }
 ];
 
-interface NewRole {
-    name: string;
-    description: string;
-    permissions: string[];
-}
 
 export const RolePermissions: React.FC = () => {
+
+    const { id } = useParams();
     const [showAddRoleModal, setShowAddRoleModal] = useState(false);
     const [showEditRoleModal, setShowEditRoleModal] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [editedPermissions, setEditedPermissions] = useState<string[]>([]);
     const [showSuccessToast, setShowSuccessToast] = useState(false);
+
+    useEffect(() => {
+        if (id) {
+            console.log('Loading permissions for role:', id);
+            const role = roles.find(r => r.id === parseInt(id));
+            if (role) {
+                setSelectedRole(role);
+                setEditedPermissions(role.permissions || []);
+            }
+        }
+    }, [id]);
     const [newRole, setNewRole] = useState<NewRole>({
         name: '',
         description: '',

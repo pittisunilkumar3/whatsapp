@@ -3,7 +3,7 @@ import { Card } from '~/components/ui/Card';
 import { Checkbox } from '~/components/ui/Checkbox';
 import { Button } from '~/components/ui/Button';
 import { NotificationToast } from '~/components/ui/NotificationToast';
-import { SaveIcon, Shield } from 'lucide-react';
+import { Save, Shield } from 'lucide-react';
 
 interface PermissionRow {
 	module: string;
@@ -241,7 +241,7 @@ export const Permissions: React.FC = () => {
 							) : (
 								<>
 									<span>Save Changes</span>
-									<SaveIcon className="h-5 w-5" />
+									<Save className="h-5 w-5" />
 								</>
 							)}
 						</Button>

@@ -125,6 +125,8 @@ export const AppRoutes: React.FC = () => {
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="audit-logs" element={<AuditLogs />} />
                 <Route path="role-permissions" element={<RolePermissions />} />
+                {/* <Route path="role-permissions/:id" element={<RolePermissions />} /> */}
+                <Route path="permissions/:id" element={<Permissions />} />
                 <Route path="permissions" element={<Permissions />} />
                 <Route path="email-integration" element={<EmailIntegration />} />
                 <Route path="role-management" element={<RoleManagement />} />
@@ -149,7 +151,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="leads" element={<Leads />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="settings" element={<SettingsPage />} />
-                <Route path="employee-permissions" element={<EmployeePermissions />} />
+                <Route path="employee-permissions/:id" element={<EmployeePermissions />} />
                 <Route path="role-management" element={<CompanyRoleManagement />} />
               </Routes>
           </RoleGuard>

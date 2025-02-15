@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import type { Column } from '../../components/ui/DataTable';
 import { DataTable } from '../../components/ui/DataTable';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pen, Trash2, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { apiService } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -19,6 +21,7 @@ interface Role {
 }
 
 export const RoleManagement = () => {
+	const navigate = useNavigate();
 	const [roleName, setRoleName] = useState('');
 	const [editingRole, setEditingRole] = useState<Role | null>(null);
 	const [roles, setRoles] = useState<Role[]>([]);
@@ -113,20 +116,20 @@ export const RoleManagement = () => {
 		}
 	};
 
-	const columns = [
-		{ key: 'name', title: 'Role', sortable: true },
+	const columns: Column<Role>[] = [
+		{ key: 'name' as keyof Role, title: 'Role', sortable: true },
 		{ 
-			key: 'is_system', 
+			key: 'is_system' as keyof Role, 
 			title: 'Type',
 			render: (value: boolean) => value ? 'System' : 'Custom'
 		},
 		{
-			key: 'is_active',
+			key: 'is_active' as keyof Role,
 			title: 'Status',
 			render: (value: boolean) => value ? 'Active' : 'Inactive'
 		},
 		{
-			key: 'actions',
+			key: 'actions' as keyof Role,
 			title: 'Action',
 			render: (_: any, row: Role) => (
 				<div className="flex gap-2">
@@ -136,7 +139,7 @@ export const RoleManagement = () => {
 						onClick={() => handleEdit(row)}
 						disabled={isLoading || row.is_system}
 					>
-						<Pencil className="h-4 w-4" />
+						<Pen className="h-4 w-4" />
 					</Button>
 					<Button 
 						variant="ghost" 
@@ -145,6 +148,13 @@ export const RoleManagement = () => {
 						disabled={isLoading || row.is_system}
 					>
 						<Trash2 className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={() => navigate(`/superadmin/permissions/${row.id}`)}
+					>
+						<Lock className="h-4 w-4" />
 					</Button>
 				</div>
 			),

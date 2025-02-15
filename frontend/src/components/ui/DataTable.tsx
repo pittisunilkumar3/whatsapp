@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Input } from './Input';
 
-interface Column<T> {
+export interface Column<T> {
 	key: keyof T;
 	title: string;
 	render?: (value: any, row: T) => React.ReactNode;

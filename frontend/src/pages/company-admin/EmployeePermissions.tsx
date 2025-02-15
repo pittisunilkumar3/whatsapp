@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card } from '~/components/ui/Card';
 import { Checkbox } from '~/components/ui/Checkbox';
 import { Button } from '~/components/ui/Button';
 import { NotificationToast } from '~/components/ui/NotificationToast';
-import { SaveIcon } from 'lucide-react';
+import { Save } from 'lucide-react';
 
 interface PermissionRow {
 	module: string;
@@ -73,6 +74,7 @@ const permissionsData: PermissionRow[] = [
 ];
 
 export const EmployeePermissions: React.FC = () => {
+	const { id } = useParams();
 	const [permissions, setPermissions] = useState(permissionsData);
 	const [isSaving, setIsSaving] = useState(false);
 	const [notification, setNotification] = useState<{
@@ -85,12 +87,25 @@ export const EmployeePermissions: React.FC = () => {
 		isVisible: false
 	});
 
+	useEffect(() => {
+		if (id) {
+			console.log('Loading permissions for role:', id);
+			// TODO: Fetch role-specific permissions from API
+			// For now, we'll use the existing permissions data
+			setNotification({
+				type: 'success',
+				message: `Loaded permissions for role ID: ${id}`,
+				isVisible: true
+			});
+		}
+	}, [id]);
+
 	const handleSave = async () => {
 		setIsSaving(true);
 		try {
 			// TODO: Implement API call to save employee permissions
 			await new Promise(resolve => setTimeout(resolve, 1000));
-			console.log('Saving employee permissions:', permissions);
+			console.log('Saving employee permissions:', { roleId: id, permissions });
 			setNotification({
 				type: 'success',
 				message: 'Employee permissions saved successfully',
@@ -192,7 +207,7 @@ export const EmployeePermissions: React.FC = () => {
 					) : (
 						<>
 							<span>Save Changes</span>
-							<SaveIcon className="h-5 w-5" />
+							<Save className="h-5 w-5" />
 						</>
 					)}
 				</Button>
