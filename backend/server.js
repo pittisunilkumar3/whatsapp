@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const db = require('./db');
+const { sequelize } = require('./src/models');
+
 const Role = require('./src/models/Role');
 const roleRoutes = require('./src/routes/roleRoutes');
 const permissionGroupRoutes = require('./src/routes/permissionGroupRoutes');
@@ -20,6 +21,7 @@ const superAdminSidebarSubMenuRoutes = require('./src/routes/superAdminSidebarSu
 const superAdminSidebarCombinedRoutes = require('./src/routes/superadminSidebarCombinedRoutes');
 const superAdminEmailConfigRoutes = require('./src/routes/superAdminEmailConfigRoutes');
 const companyRoleRoutes = require('./src/routes/companyRoleRoutes');
+const testSuperadminRoutes = require('./src/routes/testSuperadminRoutes');
 
 const callCampaignRoutes = require('./src/callagent/routes/callCampaignRoutes');
 const callAgentRoutes = require('./src/callagent/routes/callAgentRoutes');
@@ -64,6 +66,7 @@ app.use('/api/superadmin-sidebar-menus', superAdminSidebarMenuRoutes);
 app.use('/api/superadmin-sidebar-sub-menus', superAdminSidebarSubMenuRoutes);
 app.use('/api/superadmin-sidebar', superAdminSidebarCombinedRoutes);
 app.use('/api/superadmin/email-config', superAdminEmailConfigRoutes);
+app.use('/api/testsuperadmin', testSuperadminRoutes);
 
 app.use('/api/callagent/campaigns', callCampaignRoutes);
 app.use('/api/callagent/agents', callAgentRoutes);
@@ -72,50 +75,27 @@ app.use('/api/callagent/calls', callRoutes);
 app.use('/api/callagent/reports', callReportRoutes);
 console.log('API routes setup completed');
 
-// Test API endpoint
-app.get('/api/test', async (req, res) => {
-	try {
-		console.log('Testing database connection...');
-		const [result] = await db.query('SELECT 1 as test');
-		console.log('Database connection test successful');
-		res.json({ message: 'Database connection successful', data: result });
-	} catch (error) {
-		console.error('Database connection test failed:', error);
-		res.status(500).json({ error: error.message });
-	}
-});
 
-// Add test endpoint to verify companies table structure
-app.get('/api/test/companies', async (req, res) => {
-	try {
-		console.log('Fetching companies table structure...');
-		const [result] = await db.query('SHOW COLUMNS FROM companies');
-		console.log('Companies table structure retrieved successfully');
-		res.json({ message: 'Companies table structure', data: result });
-	} catch (error) {
-		console.error('Failed to fetch companies table structure:', error);
-		res.status(500).json({ error: error.message });
-	}
-});
+
 
 // Initialize database and start server
 (async () => {
 	try {
 		console.log('Starting database initialization...');
-		console.log('Testing database connection...');
 		
-		try {
-			await db.query('SELECT 1');
-			console.log('Database connection successful');
-		} catch (dbError) {
-			console.error('Database connection failed:', dbError);
-			throw dbError;
-		}
+		// Test database connection
+		await sequelize.authenticate();
+		console.log('Database connection successful');
+		
+		// Sync models with database
+		await sequelize.sync({ alter: true });
+		console.log('Models synchronized with database');
 		
 		const PORT = process.env.PORT || 5000;
 		const server = app.listen(PORT, () => {
 			console.log(`Server running on port ${PORT}`);
 		});
+
 
 
 		server.on('error', (err) => {

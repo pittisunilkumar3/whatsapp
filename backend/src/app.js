@@ -31,6 +31,7 @@ const companyRoleRoutes = require('./routes/companyRoleRoutes');
 const companyEmployeeRoleRoutes = require('./routes/companyEmployeeRoleRoutes');
 const companyRolePermissionRoutes = require('./routes/companyRolePermissionRoutes');
 const superadminRolePermissionRoutes = require('./routes/superadminRolePermissionRoutes');
+const testSuperadminRoutes = require('./routes/testSuperadminRoutes');
 
 const app = express();
 
@@ -38,6 +39,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Debug middleware for all requests
+app.use((req, res, next) => {
+	console.log('Incoming request:', {
+		method: req.method,
+		url: req.url,
+		path: req.path,
+		baseUrl: req.baseUrl
+	});
+	next();
+});
 
 // Routes
 app.use('/api/superadmin-sidebar-menus', superAdminSidebarMenuRoutes);
@@ -63,6 +75,7 @@ app.use('/api/company-roles', companyRoleRoutes);
 app.use('/api/company-employee-roles', companyEmployeeRoleRoutes);
 app.use('/api/company-role-permissions', companyRolePermissionRoutes);
 app.use('/api/superadmin-role-permissions', superadminRolePermissionRoutes);
+app.use('/api/testsuperadmin/', testSuperadminRoutes);
 
 // Call Agent Routes
 app.use('/api/call-agents', callAgentRoutes);
