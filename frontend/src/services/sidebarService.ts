@@ -48,7 +48,7 @@ interface SidebarMenu {
 }
 
 export const fetchSuperAdminSidebar = async () => {
-	const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/superadmin-sidebar/superadmin-sidebar-combined`);
+	const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/superadmin-sidebar/superadmin-sidebar-combined`);
 	return response.data.data as SidebarItem[];
 };
 

@@ -214,12 +214,12 @@ export const apiService = {
 		is_system: boolean; 
 		is_superadmin: boolean; 
 	}): Promise<CreateRoleResponse> => {
-		const response = await api.post('/api/roles', data);
+		const response = await api.post('/roles', data);
 		return response.data;
 	},
 
 	listRoles: async (): Promise<RoleListResponse> => {
-		const response = await api.get('/api/roles');
+		const response = await api.get('/roles');
 		return response.data;
 	},
 
@@ -231,12 +231,20 @@ export const apiService = {
 		is_superadmin?: boolean;
 	}): Promise<UpdateRoleResponse> => {
 		console.log('Sending update request:', { id, data });
-		const response = await api.put(`/api/roles/${id}`, data);
+		const response = await api.put(`/roles/${id}`, data);
 		return response.data;
 	},
 
 	deleteRole: async (id: number): Promise<DeleteRoleResponse> => {
-		const response = await api.delete(`/api/roles/${id}`);
+		const response = await api.delete(`/roles/${id}`);
 		return response.data;
 	}
 };
+
+
+
+
+
+
+
+
