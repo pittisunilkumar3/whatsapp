@@ -32,7 +32,7 @@ CREATE TABLE company_roles (
 	"is_superadmin": 0
 }
 ```
-- **Success Response:**
+- **Success Response:** (201 Created)
 ```json
 {
 	"success": true,
@@ -56,7 +56,7 @@ CREATE TABLE company_roles (
   - `company_id`: Filter by company ID (optional)
   - `is_active`: Filter by active status (optional)
   - `is_system`: Filter by system role status (optional)
-- **Success Response:**
+- **Success Response:** (200 OK)
 ```json
 {
 	"success": true,
@@ -79,7 +79,7 @@ CREATE TABLE company_roles (
 ### Get Company Role by ID
 - **URL:** `/api/company-roles/:id`
 - **Method:** `GET`
-- **Success Response:**
+- **Success Response:** (200 OK)
 ```json
 {
 	"success": true,
@@ -111,7 +111,7 @@ CREATE TABLE company_roles (
 	"is_superadmin": 0
 }
 ```
-- **Success Response:**
+- **Success Response:** (200 OK)
 ```json
 {
 	"success": true,
@@ -123,7 +123,9 @@ CREATE TABLE company_roles (
 		"slug": "senior-manager",
 		"is_active": 1,
 		"is_system": 0,
-		"is_superadmin": 0
+		"is_superadmin": 0,
+		"created_at": "2024-03-22T10:00:00.000Z",
+		"updated_at": "2024-03-22"
 	}
 }
 ```
@@ -131,7 +133,7 @@ CREATE TABLE company_roles (
 ### Delete Company Role
 - **URL:** `/api/company-roles/:id`
 - **Method:** `DELETE`
-- **Success Response:**
+- **Success Response:** (200 OK)
 ```json
 {
 	"success": true,
@@ -148,7 +150,7 @@ CREATE TABLE company_roles (
 	"is_active": 1
 }
 ```
-- **Success Response:**
+- **Success Response:** (200 OK)
 ```json
 {
 	"success": true,

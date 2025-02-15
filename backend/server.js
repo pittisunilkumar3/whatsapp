@@ -19,6 +19,7 @@ const superAdminSidebarMenuRoutes = require('./src/routes/superAdminSidebarMenuR
 const superAdminSidebarSubMenuRoutes = require('./src/routes/superAdminSidebarSubMenuRoutes');
 const superAdminSidebarCombinedRoutes = require('./src/routes/superadminSidebarCombinedRoutes');
 const superAdminEmailConfigRoutes = require('./src/routes/superAdminEmailConfigRoutes');
+const companyRoleRoutes = require('./src/routes/companyRoleRoutes');
 
 const callCampaignRoutes = require('./src/callagent/routes/callCampaignRoutes');
 const callAgentRoutes = require('./src/callagent/routes/callAgentRoutes');
@@ -57,6 +58,7 @@ app.use('/api/staff-roles', staffRoleRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/company-employees', companyEmployeeRoutes);
+app.use('/api/company-roles', companyRoleRoutes);
 app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/superadmin-sidebar-menus', superAdminSidebarMenuRoutes);
 app.use('/api/superadmin-sidebar-sub-menus', superAdminSidebarSubMenuRoutes);

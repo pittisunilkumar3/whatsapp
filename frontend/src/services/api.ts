@@ -167,6 +167,40 @@ interface DeleteRoleResponse {
 	message: string;
 }
 
+interface CompanyRole {
+	id: number;
+	company_id: number;
+	name: string;
+	slug: string;
+	is_active: number;
+	is_system: number;
+	is_superadmin: number;
+	created_at?: string;
+	updated_at?: string;
+}
+
+interface CreateCompanyRoleResponse {
+	success: boolean;
+	message: string;
+	data: CompanyRole;
+}
+
+interface ListCompanyRolesResponse {
+	success: boolean;
+	data: CompanyRole[];
+}
+
+interface UpdateCompanyRoleResponse {
+	success: boolean;
+	message: string;
+	data: CompanyRole;
+}
+
+interface DeleteCompanyRoleResponse {
+	success: boolean;
+	message: string;
+}
+
 export const apiService = {
 	superAdminLogin: async (email: string, password: string): Promise<LoginResponse> => {
 		console.log('Attempting super admin login...');
@@ -237,6 +271,47 @@ export const apiService = {
 
 	deleteRole: async (id: number): Promise<DeleteRoleResponse> => {
 		const response = await api.delete(`/roles/${id}`);
+		return response.data;
+	},
+
+	createCompanyRole: async (data: {
+		company_id: number;
+		name: string;
+		slug: string;
+		is_active: number;
+		is_system: number;
+		is_superadmin: number;
+	}): Promise<CreateCompanyRoleResponse> => {
+		const response = await api.post('/company-roles', data);
+		return response.data;
+	},
+
+	listCompanyRoles: async (params?: {
+		company_id?: number;
+		is_active?: number;
+		is_system?: number;
+	}): Promise<ListCompanyRolesResponse> => {
+		const response = await api.get('/company-roles', { params });
+		return response.data;
+	},
+
+	updateCompanyRole: async (
+		id: number,
+		data: {
+			company_id: number;
+			name: string;
+			slug: string;
+			is_active: number;
+			is_system: number;
+			is_superadmin: number;
+		}
+	): Promise<UpdateCompanyRoleResponse> => {
+		const response = await api.put(`/company-roles/${id}`, data);
+		return response.data;
+	},
+
+	deleteCompanyRole: async (id: number): Promise<DeleteCompanyRoleResponse> => {
+		const response = await api.delete(`/company-roles/${id}`);
 		return response.data;
 	}
 };

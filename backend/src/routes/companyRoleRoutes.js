@@ -2,19 +2,19 @@ const express = require('express');
 const router = express.Router();
 const CompanyRole = require('../models/CompanyRole');
 
-// Create a new company role
+// Create company role
 router.post('/', async (req, res) => {
 	try {
-		const [result] = await CompanyRole.create(req.body);
+		const role = await CompanyRole.create(req.body);
 		res.status(201).json({
 			success: true,
 			message: 'Company role created successfully',
-			data: { id: result.insertId, ...req.body }
+			data: role
 		});
 	} catch (error) {
 		res.status(500).json({
 			success: false,
-			message: 'Error creating company role',
+			message: 'Failed to create company role',
 			error: error.message
 		});
 	}
@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
 	} catch (error) {
 		res.status(500).json({
 			success: false,
-			message: 'Error fetching company roles',
+			message: 'Failed to fetch company roles',
 			error: error.message
 		});
 	}
@@ -40,8 +40,8 @@ router.get('/', async (req, res) => {
 // Get company role by ID
 router.get('/:id', async (req, res) => {
 	try {
-		const [role] = await CompanyRole.findById(req.params.id);
-		if (role.length === 0) {
+		const [roles] = await CompanyRole.findById(req.params.id);
+		if (roles.length === 0) {
 			return res.status(404).json({
 				success: false,
 				message: 'Company role not found'
@@ -49,12 +49,12 @@ router.get('/:id', async (req, res) => {
 		}
 		res.json({
 			success: true,
-			data: role[0]
+			data: roles[0]
 		});
 	} catch (error) {
 		res.status(500).json({
 			success: false,
-			message: 'Error fetching company role',
+			message: 'Failed to fetch company role',
 			error: error.message
 		});
 	}
@@ -63,22 +63,23 @@ router.get('/:id', async (req, res) => {
 // Update company role
 router.put('/:id', async (req, res) => {
 	try {
-		const [result] = await CompanyRole.update(req.params.id, req.body);
-		if (result.affectedRows === 0) {
+		const success = await CompanyRole.update(req.params.id, req.body);
+		if (!success) {
 			return res.status(404).json({
 				success: false,
 				message: 'Company role not found'
 			});
 		}
+		const [updated] = await CompanyRole.findById(req.params.id);
 		res.json({
 			success: true,
 			message: 'Company role updated successfully',
-			data: { id: req.params.id, ...req.body }
+			data: updated[0]
 		});
 	} catch (error) {
 		res.status(500).json({
 			success: false,
-			message: 'Error updating company role',
+			message: 'Failed to update company role',
 			error: error.message
 		});
 	}
@@ -87,8 +88,8 @@ router.put('/:id', async (req, res) => {
 // Delete company role
 router.delete('/:id', async (req, res) => {
 	try {
-		const [result] = await CompanyRole.delete(req.params.id);
-		if (result.affectedRows === 0) {
+		const success = await CompanyRole.delete(req.params.id);
+		if (!success) {
 			return res.status(404).json({
 				success: false,
 				message: 'Company role not found'
@@ -101,7 +102,7 @@ router.delete('/:id', async (req, res) => {
 	} catch (error) {
 		res.status(500).json({
 			success: false,
-			message: 'Error deleting company role',
+			message: 'Failed to delete company role',
 			error: error.message
 		});
 	}
@@ -110,9 +111,8 @@ router.delete('/:id', async (req, res) => {
 // Toggle company role active status
 router.patch('/:id/toggle-active', async (req, res) => {
 	try {
-		const { is_active } = req.body;
-		const [result] = await CompanyRole.toggleActive(req.params.id, is_active);
-		if (result.affectedRows === 0) {
+		const success = await CompanyRole.toggleActive(req.params.id, req.body.is_active);
+		if (!success) {
 			return res.status(404).json({
 				success: false,
 				message: 'Company role not found'
@@ -120,12 +120,12 @@ router.patch('/:id/toggle-active', async (req, res) => {
 		}
 		res.json({
 			success: true,
-			message: `Company role ${is_active ? 'activated' : 'deactivated'} successfully`
+			message: `Company role ${req.body.is_active ? 'activated' : 'deactivated'} successfully`
 		});
 	} catch (error) {
 		res.status(500).json({
 			success: false,
-			message: 'Error toggling company role status',
+			message: 'Failed to toggle company role status',
 			error: error.message
 		});
 	}
