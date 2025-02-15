@@ -1,13 +1,21 @@
 import axios from 'axios';
 
 const api = axios.create({
-	baseURL: import.meta.env.VITE_API_BASE_URL
+	baseURL: import.meta.env.VITE_API_BASE_URL,
+	headers: {
+		'Content-Type': 'application/json'
+	}
 });
 
 // Add request interceptor to include token
 api.interceptors.request.use(
 	(config) => {
 		const token = localStorage.getItem('token');
+		console.log('Request config:', {
+			url: config.url,
+			method: config.method,
+			hasToken: !!token
+		});
 		if (token) {
 			config.headers.Authorization = `Bearer ${token}`;
 		}
@@ -128,11 +136,42 @@ interface CompanyLoginResponse {
 	};
 }
 
+interface Role {
+	id: number;
+	name: string;
+	slug: string;
+	is_active: boolean;
+	is_system: boolean;
+	is_superadmin: boolean;
+	created_at: string;
+	updated_at: string;
+}
+
+interface CreateRoleResponse {
+	message: string;
+	data: {
+		insertId: number;
+		affectedRows: number;
+	};
+}
+
+interface RoleListResponse {
+	data: Role[];
+}
+
+interface UpdateRoleResponse {
+	message: string;
+}
+
+interface DeleteRoleResponse {
+	message: string;
+}
+
 export const apiService = {
 	superAdminLogin: async (email: string, password: string): Promise<LoginResponse> => {
 		console.log('Attempting super admin login...');
 		try {
-			const response = await api.post('/api/superadmin/login', { email, password });
+			const response = await api.post('/superadmin/login', { email, password });
 			return response.data;
 
 		} catch (error) {
@@ -143,7 +182,7 @@ export const apiService = {
 
 	companyLogin: async (username: string, password: string): Promise<CompanyLoginResponse> => {
 		try {
-			const response = await api.post('/api/companies/login', { username, password });
+			const response = await api.post('/companies/login', { username, password });
 			return response.data;
 
 		} catch (error) {
@@ -154,7 +193,7 @@ export const apiService = {
 
 	employeeLogin: async (email: string, password: string): Promise<EmployeeLoginResponse> => {
 		try {
-			const response = await api.post('/api/company-employees/login', { email, password });
+			const response = await api.post('/company-employees/login', { email, password });
 			return response.data;
 
 		} catch (error) {
@@ -164,17 +203,40 @@ export const apiService = {
 	},
 
 	updateSuperAdminProfile: async (data: ProfileUpdateData) => {
-		const response = await api.put('/api/superadmin/profile', data);
+		const response = await api.put('/superadmin/profile', data);
 		return response.data;
 	},
 
-	updateCompanyProfile: async (data: CompanyUpdateData) => {
-		const response = await api.put('/api/companies/profile', data);
+	createRole: async (data: { 
+		name: string; 
+		slug: string; 
+		is_active: boolean; 
+		is_system: boolean; 
+		is_superadmin: boolean; 
+	}): Promise<CreateRoleResponse> => {
+		const response = await api.post('/api/roles', data);
 		return response.data;
 	},
 
-	updateEmployeeProfile: async (data: ProfileUpdateData) => {
-		const response = await api.put('/api/company-employees/profile', data);
+	listRoles: async (): Promise<RoleListResponse> => {
+		const response = await api.get('/api/roles');
+		return response.data;
+	},
+
+	updateRole: async (id: number, data: {
+		name?: string;
+		slug?: string;
+		is_active?: boolean;
+		is_system?: boolean;
+		is_superadmin?: boolean;
+	}): Promise<UpdateRoleResponse> => {
+		console.log('Sending update request:', { id, data });
+		const response = await api.put(`/api/roles/${id}`, data);
+		return response.data;
+	},
+
+	deleteRole: async (id: number): Promise<DeleteRoleResponse> => {
+		const response = await api.delete(`/api/roles/${id}`);
 		return response.data;
 	}
 };
