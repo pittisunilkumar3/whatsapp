@@ -30,9 +30,8 @@ const callLeadRoutes = require('./src/callagent/routes/callLeadRoutes');
 const callRoutes = require('./src/callagent/routes/callRoutes');
 const callReportRoutes = require('./src/callagent/routes/callReportRoutes');
 
-
-const ultravoxConfigurationRoutes = require('./src/routes/ultravoxConfigurationRoutes')
-
+const ultravoxConfigurationRoutes = require('./src/routes/ultravoxConfigurationRoutes');
+const ultravoxCallRoutes = require('./src/routes/ultravoxCallRoutes');
 
 require('dotenv').config();
 
@@ -78,10 +77,8 @@ app.use('/api/callagent/calls', callRoutes);
 app.use('/api/callagent/reports', callReportRoutes);
 
 app.use('/api/ultravox-config', ultravoxConfigurationRoutes);
+app.use('/api/ultravox-calls', ultravoxCallRoutes);
 console.log('API routes setup completed');
-
-
-
 
 // Initialize database and start server
 (async () => {
@@ -132,5 +129,3 @@ console.log('API routes setup completed');
 		process.exit(1);
 	}
 })();
-
-

@@ -57,7 +57,7 @@ const TwilioConfig = sequelize.define('TwilioConfig', {
 	timestamps: true,
 	createdAt: 'created_at',
 	updatedAt: 'updated_at',
-	tableName: 'twilio_config_table', // Explicitly define the table name
+	tableName: 'twilio_config', // Explicitly define the table name
 	freezeTableName: true // Prevent Sequelize from pluralizing the table name
 });
 
