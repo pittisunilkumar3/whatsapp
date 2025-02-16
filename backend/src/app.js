@@ -32,6 +32,7 @@ const companyEmployeeRoleRoutes = require('./routes/companyEmployeeRoleRoutes');
 const companyRolePermissionRoutes = require('./routes/companyRolePermissionRoutes');
 const superadminRolePermissionRoutes = require('./routes/superadminRolePermissionRoutes');
 const testSuperadminRoutes = require('./routes/testSuperadminRoutes');
+const ultravoxConfigurationRoutes = require('./routes/ultravoxConfigurationRoutes');
 
 const app = express();
 
@@ -76,6 +77,7 @@ app.use('/api/company-employee-roles', companyEmployeeRoleRoutes);
 app.use('/api/company-role-permissions', companyRolePermissionRoutes);
 app.use('/api/superadmin-role-permissions', superadminRolePermissionRoutes);
 app.use('/api/testsuperadmin/', testSuperadminRoutes);
+app.use('/api/ultravox-config', ultravoxConfigurationRoutes);
 
 // Call Agent Routes
 app.use('/api/call-agents', callAgentRoutes);
