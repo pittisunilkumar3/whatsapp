@@ -36,10 +36,13 @@ import EmailIntegration from '../pages/super-admin/EmailIntegration';
 import CompanyEmailIntegration from '../pages/company-admin/communication/EmailIntegration';
 import { RoleManagement } from '../pages/super-admin/RoleManagement';
 import { CompanyRoleManagement } from '../pages/company-admin/RoleManagement';
+import { Staff } from '../pages/superadmin/Staff';
+import { AddStaff } from '../pages/superadmin/AddStaff';
 
 // Company Admin Components
 import { Employees } from '../pages/company-admin/Employees';
 import { EmployeePermissions } from '../pages/company-admin/EmployeePermissions';
+import { AddEmployee } from '../pages/company-admin/AddEmployee';
 
 // Employee Components
 import { EmployeeDashboard } from '../pages/employee/Dashboard';
@@ -121,11 +124,12 @@ export const AppRoutes: React.FC = () => {
                 <Route path="profile" element={<SuperAdminProfile />} />
                 <Route path="companies" element={<Companies />} />
                 <Route path="addcompany" element={<AddCompany />} />
+                <Route path="staff" element={<Staff />} />
+                <Route path="addstaff" element={<AddStaff />} />
                 <Route path="billing" element={<BillingPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="audit-logs" element={<AuditLogs />} />
                 <Route path="role-permissions" element={<RolePermissions />} />
-                {/* <Route path="role-permissions/:id" element={<RolePermissions />} /> */}
                 <Route path="permissions/:id" element={<Permissions />} />
                 <Route path="permissions" element={<Permissions />} />
                 <Route path="email-integration" element={<EmailIntegration />} />
@@ -141,8 +145,9 @@ export const AppRoutes: React.FC = () => {
                 <Route path="dashboard" element={<CompanyAdminDashboard />} />
                 <Route path="profile" element={<CompanyAdminProfile />} />
                 <Route path="employees" element={<Employees />} />
-              <Route path="communication" element={<CommunicationHub />} />
-              <Route path="communication/voice" element={<Voice />} />
+                <Route path="addemployee" element={<AddEmployee />} />
+                <Route path="communication" element={<CommunicationHub />} />
+                <Route path="communication/voice" element={<Voice />} />
                 <Route path="communication/whatsapp" element={<WhatsApp />} />
                 <Route path="communication/sms" element={<SMS />} />
                 <Route path="communication/email" element={<Email />} />
@@ -153,7 +158,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="employee-permissions/:id" element={<EmployeePermissions />} />
                 <Route path="role-management" element={<CompanyRoleManagement />} />
-              </Routes>
+            </Routes>
           </RoleGuard>
         } />
 

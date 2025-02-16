@@ -28,6 +28,7 @@ const navigationByRole: Record<Role, Array<{ name: string; href: string; icon: a
   super_admin: [
     { name: 'Dashboard', href: '/superadmin/dashboard', icon: LayoutDashboardIcon },
     { name: 'Companies', href: '/superadmin/companies', icon: UsersIcon },
+    { name: 'Staff', href: '/superadmin/staff', icon: UsersIcon },
     { name: 'Email Integration', href: '/superadmin/email-integration', icon: MailIcon },
     { name: 'Role Management', href: '/superadmin/role-management', icon: UsersIcon },
     { name: 'Permissions', href: '/superadmin/permissions', icon: SettingsIcon },
