@@ -86,12 +86,9 @@ console.log('API routes setup completed');
 		// Test database connection
 		await sequelize.authenticate();
 		console.log('Database connection successful');
-		
-		// Sync models with database
-		await sequelize.sync({ alter: true });
-		console.log('Models synchronized with database');
-		
+
 		const PORT = process.env.PORT || 5000;
+
 		const server = app.listen(PORT, () => {
 			console.log(`Server running on port ${PORT}`);
 		});
