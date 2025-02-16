@@ -13,6 +13,7 @@ const sidebarSubMenuRoutes = require('./src/routes/sidebarSubMenuRoutes');
 const sidebarCombinedRoutes = require('./src/routes/sidebarCombinedRoutes');
 const staffRoleRoutes = require('./src/routes/staffRoleRoutes');
 const staffRoutes = require('./src/routes/staffRoutes');
+const twilioConfigRoutes = require('./src/routes/twilioConfigRoutes');
 const companyRoutes = require('./src/routes/companyRoutes');
 const companyEmployeeRoutes = require('./src/routes/companyEmployeeRoutes');
 const superAdminRoutes = require('./src/routes/superAdminRoutes');
@@ -30,6 +31,7 @@ const callRoutes = require('./src/callagent/routes/callRoutes');
 const callReportRoutes = require('./src/callagent/routes/callReportRoutes');
 
 
+const ultravoxConfigurationRoutes = require('./src/routes/ultravoxConfigurationRoutes')
 
 
 require('dotenv').config();
@@ -58,6 +60,7 @@ app.use('/api/sidebar-sub-menus', sidebarSubMenuRoutes);
 app.use('/api/sidebar-combined', sidebarCombinedRoutes);
 app.use('/api/staff-roles', staffRoleRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/twilio-config',twilioConfigRoutes)
 app.use('/api/companies', companyRoutes);
 app.use('/api/company-employees', companyEmployeeRoutes);
 app.use('/api/company-roles', companyRoleRoutes);
@@ -73,6 +76,8 @@ app.use('/api/callagent/agents', callAgentRoutes);
 app.use('/api/callagent/leads', callLeadRoutes);
 app.use('/api/callagent/calls', callRoutes);
 app.use('/api/callagent/reports', callReportRoutes);
+
+app.use('/api/ultravox-config', ultravoxConfigurationRoutes);
 console.log('API routes setup completed');
 
 

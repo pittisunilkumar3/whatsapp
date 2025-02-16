@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../db/db');
+const sequelize = require('../config/database');
 
 const TwilioConfig = sequelize.define('TwilioConfig', {
 	id: {
@@ -56,7 +56,19 @@ const TwilioConfig = sequelize.define('TwilioConfig', {
 }, {
 	timestamps: true,
 	createdAt: 'created_at',
-	updatedAt: 'updated_at'
+	updatedAt: 'updated_at',
+	tableName: 'twilio_config_table', // Explicitly define the table name
+	freezeTableName: true // Prevent Sequelize from pluralizing the table name
 });
+
+// Sync the model with the database
+(async () => {
+	try {
+		await TwilioConfig.sync();
+		console.log('TwilioConfig table created successfully');
+	} catch (error) {
+		console.error('Error creating TwilioConfig table:', error);
+	}
+})();
 
 module.exports = TwilioConfig;

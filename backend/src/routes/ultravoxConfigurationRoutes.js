@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const UltravoxConfiguration = require('../models/UltravoxConfiguration');
-const { validateToken } = require('../middleware/AuthMiddleware');
 
 // Create ultravox configuration
-router.post('/', validateToken, async (req, res) => {
+router.post('/', async (req, res) => {
+
 	try {
 		const config = await UltravoxConfiguration.create(req.body);
 		res.status(201).json({
@@ -20,7 +20,7 @@ router.post('/', validateToken, async (req, res) => {
 });
 
 // Get all configurations
-router.get('/', validateToken, async (req, res) => {
+router.get('/', async (req, res) => {
 	try {
 		const configs = await UltravoxConfiguration.findAll();
 		res.json({
@@ -36,7 +36,7 @@ router.get('/', validateToken, async (req, res) => {
 });
 
 // Get configurations for a company
-router.get('/company/:companyId', validateToken, async (req, res) => {
+router.get('/company/:companyId', async (req, res) => {
 	try {
 		const configs = await UltravoxConfiguration.findAll({
 			where: { company_id: req.params.companyId }
@@ -54,7 +54,7 @@ router.get('/company/:companyId', validateToken, async (req, res) => {
 });
 
 // Get single configuration
-router.get('/:id', validateToken, async (req, res) => {
+router.get('/:id', async (req, res) => {
 	try {
 		const config = await UltravoxConfiguration.findByPk(req.params.id);
 		if (!config) {
@@ -76,7 +76,7 @@ router.get('/:id', validateToken, async (req, res) => {
 });
 
 // Update configuration
-router.put('/:id', validateToken, async (req, res) => {
+router.put('/:id', async (req, res) => {
 	try {
 		const config = await UltravoxConfiguration.findByPk(req.params.id);
 		if (!config) {
@@ -99,7 +99,7 @@ router.put('/:id', validateToken, async (req, res) => {
 });
 
 // Delete configuration
-router.delete('/:id', validateToken, async (req, res) => {
+router.delete('/:id', async (req, res) => {
 	try {
 		const config = await UltravoxConfiguration.findByPk(req.params.id);
 		if (!config) {

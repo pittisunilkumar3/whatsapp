@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../db/db');
+const sequelize = require('../config/database');
 
 const UltravoxConfiguration = sequelize.define('UltravoxConfiguration', {
 	id: {
@@ -61,7 +61,19 @@ const UltravoxConfiguration = sequelize.define('UltravoxConfiguration', {
 }, {
 	timestamps: true,
 	createdAt: 'created_at',
-	updatedAt: 'updated_at'
+	tableName: 'ultravox_configurations',
+	updatedAt: 'updated_at',
+	freezeTableName: true
 });
+
+// Sync the model with the database
+(async () => {
+    try {
+        await UltravoxConfiguration.sync();
+        console.log('UltravoxConfiguration table created successfully');
+    } catch (error) {
+        console.error('Error creating UltravoxConfiguration table:', error);
+    }
+})();
 
 module.exports = UltravoxConfiguration;
