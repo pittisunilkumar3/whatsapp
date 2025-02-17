@@ -335,8 +335,8 @@ export const Voice: React.FC = () => {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
                     <Button 
+                        variant="ghost"
                         onClick={() => setShowVoiceClone(true)} 
-                        variant="outline"
                         className="w-full sm:w-auto"
                     >
                         <Mic2 className="w-4 h-4 mr-2" />
@@ -381,7 +381,7 @@ export const Voice: React.FC = () => {
                                 </div>
                             </div>
                             <div className="flex items-center space-x-3">
-                                <Button variant="outline" onClick={() => setSelectedAgent(agent)}>
+                                <Button variant="ghost" onClick={() => setSelectedAgent(agent)}>
                                     <Volume2 className="w-4 h-4 mr-2" />
                                     Preview
                                 </Button>
@@ -475,7 +475,7 @@ export const Voice: React.FC = () => {
                                 onChange={() => setIsRealtime(!isRealtime)}
                                 label="Real-time Updates"
                             />
-                            <Button variant="outline" size="sm">
+                            <Button variant="ghost" size="sm">
                                 <Activity className="w-4 h-4 mr-2" />
                                 Live View
                             </Button>
@@ -719,15 +719,15 @@ export const Voice: React.FC = () => {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2 sm:gap-4 w-full sm:w-auto">
-                    <Button variant="outline" className="flex-1 sm:flex-none">
+                    <Button variant="ghost" className="flex-1 sm:flex-none">
                         <Download className="w-4 h-4 mr-2" />
                         Export
                     </Button>
-                    <Button variant="outline" className="flex-1 sm:flex-none">
+                    <Button variant="ghost" className="flex-1 sm:flex-none">
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Refresh
                     </Button>
-                    <Button variant="outline" className="flex-1 sm:flex-none">
+                    <Button variant="ghost" className="flex-1 sm:flex-none">
                         <Settings className="w-4 h-4 mr-2" />
                         Settings
                     </Button>
@@ -800,7 +800,7 @@ export const Voice: React.FC = () => {
                         label="Schedule Start"
                     />
                     <div className="flex justify-end space-x-3 mt-6">
-                        <Button variant="outline" onClick={() => setShowNewCampaign(false)}>
+                        <Button variant="ghost" onClick={() => setShowNewCampaign(false)}>
                             Cancel
                         </Button>
                         <Button className="bg-primary text-white">
@@ -854,14 +854,14 @@ export const Voice: React.FC = () => {
                                 className="w-full h-20 resize-none border rounded-lg p-2"
                                 placeholder="Enter text to preview voice..."
                             />
-                            <Button variant="outline" className="mt-2">
+                            <Button variant="ghost" className="mt-2">
                                 <Volume2 className="w-4 h-4 mr-2" />
                                 Preview Voice
                             </Button>
                         </div>
                     </div>
                     <div className="flex justify-end space-x-3 mt-6">
-                        <Button variant="outline" onClick={() => setShowNewAgent(false)}>
+                        <Button variant="ghost" onClick={() => setShowNewAgent(false)}>
                             Cancel
                         </Button>
                         <Button className="bg-primary text-white">
@@ -883,7 +883,7 @@ export const Voice: React.FC = () => {
                         placeholder="Enter text to preview voice..."
                     />
                     <div className="flex justify-end space-x-3">
-                        <Button variant="outline" onClick={() => setSelectedAgent(null)}>
+                        <Button variant="ghost" onClick={() => setSelectedAgent(null)}>
                             Close
                         </Button>
                         <Button className="bg-primary text-white">
