@@ -166,11 +166,19 @@ export const Voice: React.FC = () => {
                     },
                     body: JSON.stringify({ companyId }),
                 });
+
+                if (!response.ok) {
+                    console.error(`Error fetching voices: HTTP status ${response.status}`);
+                    setVoiceOptions([]);
+                    return;
+                }
+
                 const data: VoiceApiResponse = await response.json();
                 console.log('Fetched voices:', data);
                 setVoiceOptions(data.results);
             } catch (error) {
                 console.error('Error fetching voices:', error);
+                setVoiceOptions([]);
             } finally {
                 setIsLoadingVoices(false);
             }
@@ -292,11 +300,13 @@ export const Voice: React.FC = () => {
     };
 
     const handleTestCall = async () => {
-        if (!selectedTestAgent || !selectedVoice || !phoneNumber) {
+        if (!companyId || !selectedTestAgent || !selectedVoice || !phoneNumber) {
+            console.error('Please fill in all required fields');
             return;
         }
-        
+
         setIsCallingInProgress(true);
+
         try {
             const response = await fetch('http://localhost:5000/api/ultravox-calls/ultravox-test-call', {
                 method: 'POST',
@@ -310,6 +320,11 @@ export const Voice: React.FC = () => {
                     voice: voiceOptions.find(v => v.voiceId === selectedVoice)?.name
                 }),
             });
+
+            if (!response.ok) {
+                console.error(`Error making test call: HTTP status ${response.status}`);
+                return;
+            }
 
             const data: TestCallResponse = await response.json();
             console.log('Test call response:', data);
@@ -604,17 +619,23 @@ export const Voice: React.FC = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-2">Select Voice Type</label>
-                                <Dropdown
-                                    value={selectedVoice}
-                                    onChange={(value) => setSelectedVoice(value)}
-                                    options={voiceOptions.map(voice => ({
-                                        label: voice.name,
-                                        value: voice.voiceId
-                                    }))}
-                                    placeholder={isLoadingVoices ? "Loading voices..." : "Choose a voice"}
-                                    disabled={isLoadingVoices}
-                                    className="w-full"
-                                />
+                                {isLoadingVoices ? (
+                                    <div className="flex items-center justify-center">
+                                        <span>Loading voices...</span>
+                                    </div>
+                                ) : (
+                                    <Dropdown
+                                        value={selectedVoice}
+                                        onChange={(value) => setSelectedVoice(value)}
+                                        options={voiceOptions.map(voice => ({
+                                            label: voice.name,
+                                            value: voice.voiceId
+                                        }))}
+                                        placeholder={voiceOptions.length === 0 ? "No voices available" : "Choose a voice"}
+                                        disabled={isLoadingVoices || voiceOptions.length === 0}
+                                        className="w-full"
+                                    />
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-2">Phone Number</label>
