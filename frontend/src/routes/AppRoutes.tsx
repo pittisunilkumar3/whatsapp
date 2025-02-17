@@ -36,8 +36,8 @@ import EmailIntegration from '../pages/super-admin/EmailIntegration';
 import CompanyEmailIntegration from '../pages/company-admin/communication/EmailIntegration';
 import { RoleManagement } from '../pages/super-admin/RoleManagement';
 import { CompanyRoleManagement } from '../pages/company-admin/RoleManagement';
-import { Staff } from '../pages/superadmin/Staff';
-import { AddStaff } from '../pages/superadmin/AddStaff';
+import { Staff } from '../pages/super-admin/Staff';
+import { AddStaff } from '../pages/super-admin/AddStaff';
 
 // Company Admin Components
 import { Employees } from '../pages/company-admin/Employees';
