@@ -95,6 +95,12 @@ interface VoiceAgent {
     previewUrl?: string | null;
 }
 
+interface TestCallResponse {
+    message: string;
+    callSid: string;
+    joinUrl: string;
+}
+
 interface AnalyticsData {
     date: string;
     calls: number;
@@ -115,6 +121,7 @@ export const Voice: React.FC = () => {
     const [selectedTestAgent, setSelectedTestAgent] = useState<string>('');
     const [selectedVoice, setSelectedVoice] = useState<string>('');
     const [phoneNumber, setPhoneNumber] = useState<string>('');
+    const [isCallingInProgress, setIsCallingInProgress] = useState(false);
     const [callHistory, setCallHistory] = useState([
         {
             id: '1',
@@ -284,27 +291,46 @@ export const Voice: React.FC = () => {
         // Implement voice cloning logic
     };
 
-    // Add function to handle test call
-    const handleTestCall = () => {
+    const handleTestCall = async () => {
         if (!selectedTestAgent || !selectedVoice || !phoneNumber) {
-            // Show error notification
             return;
         }
         
-        const selectedVoiceData = voiceOptions.find(v => v.voiceId === selectedVoice);
-        
-        // Add to call history
-        const newCall = {
-            id: Date.now().toString(),
-            number: phoneNumber,
-            startTime: new Date().toLocaleString(),
-            endTime: new Date(Date.now() + 300000).toLocaleString(), // 5 minutes later
-            summary: `Test call with ${selectedVoiceData?.name || 'Unknown'} voice completed successfully.`,
-            sentiment: 'Neutral'
-        };
-        
-        setCallHistory([newCall, ...callHistory]);
-        setPhoneNumber('');
+        setIsCallingInProgress(true);
+        try {
+            const response = await fetch('http://localhost:5000/api/ultravox-calls/ultravox-test-call', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    companyId,
+                    destinationNumber: phoneNumber,
+                    systemPrompt: isCustomPrompt ? customPrompt : voiceAgents.find(a => a.id === selectedTestAgent)?.defaultPrompt,
+                    voice: voiceOptions.find(v => v.voiceId === selectedVoice)?.name
+                }),
+            });
+
+            const data: TestCallResponse = await response.json();
+            console.log('Test call response:', data);
+            
+            // Add to call history
+            const newCall = {
+                id: data.callSid,
+                number: phoneNumber,
+                startTime: new Date().toLocaleString(),
+                endTime: new Date(Date.now() + 300000).toLocaleString(),
+                summary: `Test call initiated successfully. ${data.message}`,
+                sentiment: 'Neutral'
+            };
+            
+            setCallHistory([newCall, ...callHistory]);
+            setPhoneNumber('');
+        } catch (error) {
+            console.error('Error making test call:', error);
+        } finally {
+            setIsCallingInProgress(false);
+        }
     };
 
     const renderCampaigns = () => (
@@ -601,11 +627,11 @@ export const Voice: React.FC = () => {
                                     />
                                     <Button
                                         onClick={handleTestCall}
-                                        disabled={!selectedTestAgent || !selectedVoice || !phoneNumber}
+                                        disabled={!selectedTestAgent || !selectedVoice || !phoneNumber || isCallingInProgress}
                                         className="bg-primary text-white px-6"
                                     >
                                         <Phone className="w-4 h-4 mr-2" />
-                                        Make Call
+                                        {isCallingInProgress ? 'Initiating Call...' : 'Make Call'}
                                     </Button>
                                 </div>
                             </div>
