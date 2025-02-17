@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuthStore } from '../../store/authStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -52,6 +53,19 @@ ChartJS.register(
     Legend
 );
 
+interface VoiceApiResponse {
+    next: null | string;
+    previous: null | string;
+    results: {
+        voiceId: string;
+        name: string;
+        description: string;
+        previewUrl: string | null;
+        ownership: string;
+    }[];
+    total: number;
+}
+
 interface Campaign {
     id: string;
     name: string;
@@ -78,6 +92,7 @@ interface VoiceAgent {
     lastUsed: string;
     role: string;
     defaultPrompt: string;
+    previewUrl?: string | null;
 }
 
 interface AnalyticsData {
@@ -127,13 +142,35 @@ export const Voice: React.FC = () => {
         }
     ]);
 
-    // Add sample voice options
-    const voiceOptions = [
-        { id: 'v1', name: 'Professional Male', accent: 'US' },
-        { id: 'v2', name: 'Professional Female', accent: 'US' },
-        { id: 'v3', name: 'Casual Male', accent: 'UK' },
-        { id: 'v4', name: 'Casual Female', accent: 'UK' }
-    ];
+    const [voiceOptions, setVoiceOptions] = useState<VoiceApiResponse['results']>([]);
+    const [isLoadingVoices, setIsLoadingVoices] = useState(false);
+    const user = useAuthStore(state => state.user);
+    const companyId = user?.company?.id;
+
+    useEffect(() => {
+        const fetchVoices = async () => {
+            if (!companyId) return;
+            setIsLoadingVoices(true);
+            try {
+                const response = await fetch('http://localhost:5000/api/ultravox-calls/ultravox-voices', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ companyId }),
+                });
+                const data: VoiceApiResponse = await response.json();
+                console.log('Fetched voices:', data);
+                setVoiceOptions(data.results);
+            } catch (error) {
+                console.error('Error fetching voices:', error);
+            } finally {
+                setIsLoadingVoices(false);
+            }
+        };
+
+        fetchVoices();
+    }, [companyId]);
 
     const [campaigns] = useState<Campaign[]>([
         {
@@ -254,13 +291,15 @@ export const Voice: React.FC = () => {
             return;
         }
         
+        const selectedVoiceData = voiceOptions.find(v => v.voiceId === selectedVoice);
+        
         // Add to call history
         const newCall = {
             id: Date.now().toString(),
             number: phoneNumber,
             startTime: new Date().toLocaleString(),
             endTime: new Date(Date.now() + 300000).toLocaleString(), // 5 minutes later
-            summary: 'Test call completed successfully.',
+            summary: `Test call with ${selectedVoiceData?.name || 'Unknown'} voice completed successfully.`,
             sentiment: 'Neutral'
         };
         
@@ -543,10 +582,11 @@ export const Voice: React.FC = () => {
                                     value={selectedVoice}
                                     onChange={(value) => setSelectedVoice(value)}
                                     options={voiceOptions.map(voice => ({
-                                        label: `${voice.name} (${voice.accent})`,
-                                        value: voice.id
+                                        label: voice.name,
+                                        value: voice.voiceId
                                     }))}
-                                    placeholder="Choose a voice"
+                                    placeholder={isLoadingVoices ? "Loading voices..." : "Choose a voice"}
+                                    disabled={isLoadingVoices}
                                     className="w-full"
                                 />
                             </div>
@@ -878,6 +918,19 @@ export const Voice: React.FC = () => {
                 title={`Preview ${selectedAgent?.name}'s Voice`}
             >
                 <div className="space-y-4">
+                    {selectedAgent && (
+                        <div className="mb-4">
+                            <h4 className="text-sm font-medium mb-2">Voice Preview</h4>
+                            {selectedAgent.previewUrl ? (
+                                <audio controls className="w-full">
+                                    <source src={selectedAgent.previewUrl} type="audio/mp3" />
+                                    Your browser does not support the audio element.
+                                </audio>
+                            ) : (
+                                <p className="text-sm text-gray-500">No preview available</p>
+                            )}
+                        </div>
+                    )}
                     <textarea
                         className="w-full h-32 resize-none border rounded-lg p-2"
                         placeholder="Enter text to preview voice..."

@@ -362,6 +362,139 @@ fetch('/ultravox-voices', {
 - Confirm company has an active Ultravox configuration
 - Test various filter combinations
 
+## Ultravox Test Call
+
+### `POST /ultravox-test-call`
+
+Initiate a test call using the Ultravox API for a specific company.
+
+#### Request Payload
+
+**Payload Structure:**
+```json
+{
+  "companyId": 456,
+  "destinationNumber": "+15551234567",
+  "systemPrompt": "You are a helpful customer service representative.",
+  "voice": "professional_male_voice"
+}
+```
+
+**Payload Parameters:**
+- `companyId` (required, integer): Unique identifier of the company
+- `destinationNumber` (optional, string): Phone number to call. If not provided, uses the company's default Twilio phone number
+- `systemPrompt` (optional, string): Custom system prompt for the AI. If not provided, uses the company's default system prompt
+- `voice` (optional, string): Specific voice identifier to use for the call. If not provided, uses the company's default voice
+
+#### System Prompt Guidelines
+- Provide clear, concise instructions
+- Define the AI's role and behavior
+- Specify tone, personality, and communication style
+- Include any specific tasks or objectives
+
+#### System Prompt Examples
+
+**Customer Service:**
+```
+You are a friendly customer service representative for a tech support company. 
+Listen carefully to the customer's issue, provide clear and concise solutions, 
+and maintain a helpful and patient tone throughout the conversation.
+```
+
+**Sales Inquiry:**
+```
+You are an enthusiastic sales representative introducing a new product. 
+Highlight key features, answer potential questions, and guide the customer 
+towards making a purchase decision. Be energetic and informative.
+```
+
+**Appointment Reminder:**
+```
+You are a professional scheduling assistant calling to confirm an upcoming 
+appointment. Provide the date, time, and location details. Be clear, 
+courteous, and offer options for rescheduling if needed.
+```
+
+#### Voice Selection Guidelines
+- Choose a voice that matches the context and tone of the system prompt
+- Consider factors like:
+  - Professional vs. conversational tone
+  - Gender and age appropriateness
+  - Language and accent
+- Ensure the selected voice is available in your Ultravox configuration
+
+#### Voice Examples
+- `professional_male_voice`
+- `friendly_female_voice`
+- `technical_support_voice`
+- `sales_enthusiastic_voice`
+
+#### Example Request
+
+**Using cURL:**
+```bash
+curl -X POST /ultravox-test-call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "companyId": 456,
+    "destinationNumber": "+15551234567",
+    "systemPrompt": "You are a helpful customer service representative for a tech company.",
+    "voice": "professional_male_voice"
+  }'
+```
+
+**Using JavaScript Fetch:**
+```javascript
+fetch('/ultravox-test-call', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    companyId: 456,
+    destinationNumber: "+15551234567",
+    systemPrompt: "You are a helpful customer service representative for a tech company.",
+    voice: "professional_male_voice"
+  })
+})
+.then(response => response.json())
+.then(data => {
+  console.log('Test Call Initiated:', data);
+})
+.catch(error => console.error('Error:', error));
+```
+
+#### Error Handling
+
+**Possible Error Responses:**
+- `400 Bad Request`: Company ID not provided
+- `404 Not Found`: Twilio configuration not found for the company
+- `500 Internal Server Error`: Failed to initiate test call
+
+**Error Response Example:**
+```json
+{
+  "error": "Specific error message"
+}
+```
+
+#### Best Practices
+
+- Always provide a valid `companyId`
+- Verify Twilio and Ultravox configurations are set up correctly
+- Handle potential errors gracefully
+- Monitor call status through Twilio's call logs
+
+#### Troubleshooting
+
+- Verify correct `companyId`
+- Ensure Twilio configuration is complete
+- Check network connectivity
+- Validate destination phone number
+- Review Ultravox system prompt configuration
+
+This documentation provides guidance on using the Ultravox test call API, including request structure, response details, and best practices.
+
 ## Ultravox Configuration Retrieval
 
 ### `GET /ultravox-configuration/:companyId`
