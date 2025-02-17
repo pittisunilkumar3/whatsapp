@@ -238,4 +238,122 @@ router.post('/bulk-calls-sequential', async (req, res) => {
     }
 });
 
+/**
+ * Route to fetch available voices from Ultravox API
+ */
+router.post('/ultravox-voices', async (req, res) => {
+    try {
+        // Extract request parameters
+        const { 
+            companyId, 
+            cursor, 
+            limit = 10,
+            filters = {} 
+        } = req.body;
+
+        // Validate company ID
+        if (!companyId) {
+            return res.status(400).json({ 
+                error: 'Company ID is required' 
+            });
+        }
+
+        // Fetch Ultravox configuration to get API key for specific company
+        const ultravoxConfig = await UltravoxConfiguration.findOne({
+            where: { company_id: companyId },
+            attributes: ['apikey']
+        });
+
+        if (!ultravoxConfig || !ultravoxConfig.apikey) {
+            return res.status(404).json({ 
+                error: 'Ultravox API configuration not found for the specified company' 
+            });
+        }
+
+        // Prepare request options
+        const options = {
+            method: 'GET',
+            headers: {
+                'X-API-Key': ultravoxConfig.apikey,
+                'Content-Type': 'application/json'
+            }
+        };
+
+        // Construct URL with optional cursor and limit
+        const baseUrl = 'https://api.ultravox.ai/api/voices';
+        const url = new URL(baseUrl);
+        if (cursor) url.searchParams.append('cursor', cursor);
+        url.searchParams.append('limit', limit);
+
+        // Add any additional filters to the URL
+        Object.entries(filters).forEach(([key, value]) => {
+            url.searchParams.append(key, value);
+        });
+
+        // Make request to Ultravox voices endpoint
+        const voicesResponse = await new Promise((resolve, reject) => {
+            const request = https.request(url.toString(), options, (response) => {
+                let data = '';
+
+                response.on('data', (chunk) => {
+                    data += chunk;
+                });
+
+                response.on('end', () => {
+                    try {
+                        const parsedData = JSON.parse(data);
+                        resolve(parsedData);
+                    } catch (parseError) {
+                        console.error('JSON Parsing Error:', parseError);
+                        console.error('Raw Response Data:', data);
+                        reject(new Error('Failed to parse Ultravox API response'));
+                    }
+                });
+            });
+
+            request.on('error', (error) => {
+                console.error('HTTPS Request Error:', error);
+                reject(error);
+            });
+
+            request.end();
+        });
+
+        // Log the entire response for debugging
+        console.log('Ultravox Voices Response:', JSON.stringify(voicesResponse, null, 2));
+
+        // Validate response structure
+        if (!voicesResponse || !Array.isArray(voicesResponse.results)) {
+            return res.status(500).json({ 
+                error: 'Invalid response from Ultravox API',
+                rawResponse: voicesResponse
+            });
+        }
+
+        // Respond with the list of voices and pagination info
+        res.status(200).json({
+            next: voicesResponse.next || null,
+            previous: voicesResponse.previous || null,
+            results: voicesResponse.results.map(voice => ({
+                voiceId: voice.voiceId,
+                name: voice.name,
+                description: voice.description,
+                previewUrl: voice.previewUrl,
+                ownership: voice.ownership
+            })),
+            total: voicesResponse.total || 0
+        });
+    } catch (error) {
+        // Log the full error for server-side debugging
+        console.error('Comprehensive Error in Ultravox Voices Retrieval:', error);
+
+        // Respond with a detailed error message
+        res.status(500).json({ 
+            error: 'Failed to retrieve Ultravox voices', 
+            details: error.message,
+            fullError: process.env.NODE_ENV === 'development' ? error : undefined
+        });
+    }
+});
+
 module.exports = router;

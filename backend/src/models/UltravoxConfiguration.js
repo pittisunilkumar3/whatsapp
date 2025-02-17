@@ -67,13 +67,15 @@ const UltravoxConfiguration = sequelize.define('UltravoxConfiguration', {
 });
 
 // Sync the model with the database
-(async () => {
-    try {
-        await UltravoxConfiguration.sync();
-        console.log('UltravoxConfiguration table created successfully');
-    } catch (error) {
-        console.error('Error creating UltravoxConfiguration table:', error);
-    }
-})();
+// (async () => {
+//     try {
+//         await UltravoxConfiguration.sync();
+//         console.log('UltravoxConfiguration table created successfully');
+//     } catch (error) {
+//         console.error('Error creating UltravoxConfiguration table:', error);
+//     }
+// })();
 
 module.exports = UltravoxConfiguration;
+
+

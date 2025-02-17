@@ -62,13 +62,15 @@ const TwilioConfig = sequelize.define('TwilioConfig', {
 });
 
 // Sync the model with the database
-(async () => {
-	try {
-		await TwilioConfig.sync();
-		console.log('TwilioConfig table created successfully');
-	} catch (error) {
-		console.error('Error creating TwilioConfig table:', error);
-	}
-})();
+// (async () => {
+// 	try {
+// 		await TwilioConfig.sync();
+// 		console.log('TwilioConfig table created successfully');
+// 	} catch (error) {
+// 		console.error('Error creating TwilioConfig table:', error);
+// 	}
+// })();
 
 module.exports = TwilioConfig;
+
+

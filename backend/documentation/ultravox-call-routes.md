@@ -190,6 +190,244 @@ curl -X POST /bulk-calls-sequential \
 - Ensure valid phone numbers
 - Verify company-specific settings
 
+## Ultravox Voices Retrieval
+
+### `POST /ultravox-voices`
+
+Retrieve a filtered and paginated list of available voices from the Ultravox API for a specific company.
+
+#### Request Payload
+
+**Payload Structure:**
+```json
+{
+  "companyId": 456,
+  "cursor": "optional_pagination_cursor",
+  "limit": 10,
+  "filters": {
+    "language": "English",
+    "gender": "female",
+    "accent": "American",
+    "ownership": "public"
+  }
+}
+```
+
+**Payload Parameters:**
+- `companyId` (required, integer): Unique identifier of the company
+- `cursor` (optional, string): Pagination cursor for fetching next/previous set of voices
+- `limit` (optional, integer, default=10): Number of voices to retrieve per page
+- `filters` (optional, object): Advanced filtering options for voice selection
+
+**Filter Options:**
+- `language`: Filter voices by language (e.g., "English", "Spanish")
+- `gender`: Filter voices by gender ("male" or "female")
+- `accent`: Filter voices by accent (e.g., "American", "British")
+- `ownership`: Filter voices by ownership ("public" or "private")
+
+#### Response Structure
+
+**Successful Response:**
+```json
+{
+  "next": "http://api.example.org/accounts/?cursor=nextCursor",
+  "previous": "http://api.example.org/accounts/?cursor=previousCursor",
+  "results": [
+    {
+      "voiceId": "3c90c3cc-0d44-4b50-8888-8dd25736052a",
+      "name": "Emma",
+      "description": "Soft female American English voice",
+      "previewUrl": "https://api.ultravox.ai/preview/emma.mp3",
+      "ownership": "public"
+    }
+  ],
+  "total": 123
+}
+```
+
+**Response Fields:**
+- `next` (string, nullable): URL for the next page of voices
+- `previous` (string, nullable): URL for the previous page of voices
+- `results` (array): List of voice objects
+  - `voiceId` (string): Unique identifier for the voice
+  - `name` (string): Name of the voice
+  - `description` (string): Detailed description of the voice
+  - `previewUrl` (string): URL to preview the voice
+  - `ownership` (string): Ownership status of the voice
+- `total` (integer): Total number of available voices
+
+#### Example Request
+
+**Using cURL:**
+```bash
+curl -X POST /ultravox-voices \
+  -H "Content-Type: application/json" \
+  -d '{
+    "companyId": 456,
+    "limit": 10,
+    "filters": {
+      "language": "English",
+      "gender": "female"
+    }
+  }'
+```
+
+**Using JavaScript Fetch:**
+```javascript
+fetch('/ultravox-voices', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    companyId: 456,
+    limit: 10,
+    filters: {
+      language: "English",
+      gender: "female"
+    }
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));
+```
+
+#### Advanced Filtering Scenarios
+
+**Multiple Filter Combinations:**
+```json
+{
+  "companyId": 456,
+  "limit": 15,
+  "filters": {
+    "language": "English",
+    "gender": "female",
+    "accent": "American",
+    "ownership": "public"
+  }
+}
+```
+
+**Pagination with Filters:**
+```json
+{
+  "companyId": 456,
+  "cursor": "cD00ODY%3D",
+  "limit": 20,
+  "filters": {
+    "language": "Spanish",
+    "gender": "male"
+  }
+}
+```
+
+#### Error Handling
+
+**Possible Error Responses:**
+- `400 Bad Request`: Company ID not provided or invalid
+- `404 Not Found`: Ultravox API configuration not found for the company
+- `500 Internal Server Error`: Failed to retrieve voices
+
+**Error Response Example:**
+```json
+{
+  "error": "Failed to retrieve Ultravox voices",
+  "details": "Specific error message"
+}
+```
+
+#### Best Practices
+
+- Always provide a valid `companyId`
+- Use filters to narrow down voice selection
+- Implement client-side pagination
+- Handle potential errors gracefully
+- Cache voice results to reduce API calls
+- Periodically refresh the voice list
+
+#### Performance Considerations
+
+- Pagination reduces response payload size
+- Advanced filtering minimizes unnecessary data transfer
+- Allows efficient browsing of large voice collections
+- Minimizes bandwidth and processing overhead
+
+#### Troubleshooting
+
+- Verify correct `companyId`
+- Ensure Ultravox API key is configured
+- Check network connectivity
+- Validate cursor and limit parameters
+- Confirm company has an active Ultravox configuration
+- Test various filter combinations
+
+## Ultravox Configuration Retrieval
+
+### `GET /ultravox-configuration/:companyId`
+
+Retrieve the Ultravox configuration for a specific company.
+
+**Request Parameters:**
+- `companyId` (required): Unique identifier of the company
+
+**Authentication:**
+- Requires valid access token
+- Retrieves configuration based on company ID
+
+**Response Structure:**
+```json
+{
+  "message": "Ultravox configuration retrieved successfully",
+  "configuration": {
+    "id": 123,
+    "companyId": 456,
+    "systemPrompt": "You are an AI assistant...",
+    "model": "gpt-3.5-turbo",
+    "voice": "emma_soft",
+    "firstSpeaker": "ai",
+    "apiUrl": "https://api.ultravox.ai/call",
+    "createdAt": "2024-02-17T10:30:00Z",
+    "updatedAt": "2024-02-17T11:45:00Z"
+  }
+}
+```
+
+**Example Request:**
+```bash
+curl -X GET /ultravox-configuration/456 \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**Error Responses:**
+- `400 Bad Request`: Company ID not provided
+- `404 Not Found`: No configuration found for the company
+- `500 Internal Server Error`: Failed to retrieve configuration
+
+**Security Notes:**
+- API key is intentionally excluded from the response
+- Requires proper authentication
+
+**Key Features:**
+- Retrieves company-specific Ultravox configuration
+- Provides detailed configuration insights
+- Supports configuration management
+
+**Use Cases:**
+- Verify current Ultravox settings
+- Validate configuration before calls
+- Assist in configuration troubleshooting
+
+**Best Practices:**
+- Cache configuration results
+- Periodically refresh configuration
+- Use for pre-call configuration checks
+
+**Troubleshooting:**
+- Verify company ID accuracy
+- Check database connectivity
+- Ensure proper access permissions
+
 ## Best Practices for Bulk Calls
 1. Start with a small number of concurrent calls
 2. Monitor system performance and adjust `maxConcurrentCalls`
