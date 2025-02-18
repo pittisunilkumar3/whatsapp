@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -109,8 +110,8 @@ interface AnalyticsData {
 }
 
 export const Voice: React.FC = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('campaigns');
-    const [showNewCampaign, setShowNewCampaign] = useState(false);
     const [showNewAgent, setShowNewAgent] = useState(false);
     const [showVoiceClone, setShowVoiceClone] = useState(false);
     const [selectedAgent, setSelectedAgent] = useState<VoiceAgent | null>(null);
@@ -348,6 +349,10 @@ export const Voice: React.FC = () => {
         }
     };
 
+    const handleNewCampaign = () => {
+        navigate('/company-admin/communication/voice/new-campaign');
+    };
+
     const renderCampaigns = () => (
         <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -371,7 +376,7 @@ export const Voice: React.FC = () => {
                     />
                 </div>
                 <Button 
-                    onClick={() => setShowNewCampaign(true)} 
+                    onClick={handleNewCampaign}
                     className="w-full sm:w-auto bg-primary text-white"
                 >
                     <PlusCircle className="w-4 h-4 mr-2" />
@@ -855,47 +860,6 @@ export const Voice: React.FC = () => {
                 onClose={() => setShowVoiceClone(false)}
                 onClone={handleVoiceClone}
             />
-
-            {/* New Campaign Modal */}
-            <Modal
-                isOpen={showNewCampaign}
-                onClose={() => setShowNewCampaign(false)}
-                title="Create New Campaign"
-            >
-                <div className="space-y-4">
-                    <Input label="Campaign Name" placeholder="Enter campaign name" />
-                    <Dropdown
-                        label="Voice Agent"
-                        value=""
-                        onChange={() => {}}
-                        options={voiceAgents.map(agent => ({
-                            label: agent.name,
-                            value: agent.id
-                        }))}
-                    />
-                    <div className="space-y-2">
-                        <label className="block text-sm font-medium">Import Leads</label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                            <Upload className="w-8 h-8 mx-auto text-gray-400" />
-                            <p className="mt-2 text-sm text-gray-500">
-                                Drag and drop your CSV file here, or click to browse
-                            </p>
-                        </div>
-                    </div>
-                    <Input
-                        type="datetime-local"
-                        label="Schedule Start"
-                    />
-                    <div className="flex justify-end space-x-3 mt-6">
-                        <Button variant="ghost" onClick={() => setShowNewCampaign(false)}>
-                            Cancel
-                        </Button>
-                        <Button className="bg-primary text-white">
-                            Create Campaign
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
 
             {/* New Voice Agent Modal */}
             <Modal

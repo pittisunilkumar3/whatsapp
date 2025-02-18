@@ -19,6 +19,7 @@ import { Campaigns } from '../pages/Campaigns';
 
 // Communication Components
 import { Voice } from '../pages/communication/Voice';
+import { VoiceCampaignCreation } from '../pages/communication/VoiceCampaignCreation';
 import { WhatsApp } from '../pages/communication/WhatsApp';
 import { SMS } from '../pages/communication/SMS';
 import { Email } from '../pages/communication/Email';
@@ -149,6 +150,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="addemployee" element={<AddEmployee />} />
                 <Route path="communication" element={<CommunicationHub />} />
                 <Route path="communication/voice" element={<Voice />} />
+                <Route path="communication/voice/new-campaign" element={<VoiceCampaignCreation />} />
                 <Route path="communication/whatsapp" element={<WhatsApp />} />
                 <Route path="communication/sms" element={<SMS />} />
                 <Route path="communication/email" element={<Email />} />
