@@ -52,8 +52,15 @@ const navigationByRole: Record<Role, Array<{ name: string; href: string; icon: a
     { name: 'Employees', href: '/company-admin/employees', icon: UsersIcon },
     { name: 'Role Management', href: '/company-admin/role-management', icon: UsersIcon },
     { name: 'Analytics', href: '/company-admin/analytics', icon: BarChartIcon },
-    { name: 'Settings', href: '/company-admin/settings', icon: SettingsIcon },
-    { name: 'Employee Permissions', href: '/company-admin/employee-permissions', icon: SettingsIcon },
+    {
+      name: 'Settings',
+      icon: SettingsIcon,
+      items: [
+        { name: 'General', href: '/company-admin/settings', icon: SettingsIcon },
+        { name: 'Third-Party URLs', href: '/company-admin/settings/third-party-url', icon: SettingsIcon },
+        { name: 'Employee Permissions', href: '/company-admin/employee-permissions', icon: SettingsIcon }
+      ]
+    }
   ],
   employee: [
     { name: 'Dashboard', href: '/employee/dashboard', icon: LayoutDashboardIcon },

@@ -201,6 +201,63 @@ interface DeleteCompanyRoleResponse {
 	message: string;
 }
 
+interface TwilioConfigData {
+	company_id: number;
+	account_sid: string;
+	auth_token: string;
+	phone_number: string;
+	messaging_service_sid: string;
+	region: string;
+	api_base_url: string;
+}
+
+interface TwilioConfigResponse {
+	success: boolean;
+	data: TwilioConfigData & {
+		id: number;
+		created_at: string;
+		updated_at: string;
+	};
+}
+
+interface TwilioConfigListResponse {
+	success: boolean;
+	data: Array<TwilioConfigData & {
+		id: number;
+		created_at: string;
+		updated_at: string;
+	}>;
+}
+
+interface UltravoxConfigData {
+	company_id: number;
+	apikey: string;
+	apiurl: string;
+	model?: string;
+	voice?: string;
+	firstspeaker?: string;
+	system_prompt: string;
+	is_active?: boolean;
+}
+
+interface UltravoxConfigResponse {
+	success: boolean;
+	data: UltravoxConfigData & {
+		id: string;
+		created_at: string;
+		updated_at: string;
+	};
+}
+
+interface UltravoxConfigListResponse {
+	success: boolean;
+	data: Array<UltravoxConfigData & {
+		id: string;
+		created_at: string;
+		updated_at: string;
+	}>;
+}
+
 export const apiService = {
 	superAdminLogin: async (email: string, password: string): Promise<LoginResponse> => {
 		console.log('Attempting super admin login...');
@@ -313,7 +370,92 @@ export const apiService = {
 	deleteCompanyRole: async (id: number): Promise<DeleteCompanyRoleResponse> => {
 		const response = await api.delete(`/company-roles/${id}`);
 		return response.data;
-	}
+	},
+
+	// Create Twilio Configuration
+	createTwilioConfig: async (data: TwilioConfigData): Promise<TwilioConfigResponse> => {
+		const response = await api.post('/twilio-config', data);
+		return response.data;
+	},
+
+	// Get Twilio Configuration by ID
+	getTwilioConfigById: async (id: number): Promise<TwilioConfigResponse> => {
+		const response = await api.get(`/twilio-config/${id}`);
+		return response.data;
+	},
+
+	// Get Twilio Configuration by Company ID
+	getTwilioConfigByCompany: async (companyId: number): Promise<TwilioConfigResponse> => {
+		const response = await api.get(`/twilio-config/company/${companyId}`);
+		return response.data;
+	},
+
+	// Update Twilio Configuration
+	updateTwilioConfig: async (id: number, data: Partial<TwilioConfigData>): Promise<TwilioConfigResponse> => {
+		const response = await api.put(`/twilio-config/${id}`, data);
+		return response.data;
+	},
+
+	// Delete Twilio Configuration
+	deleteTwilioConfig: async (id: number): Promise<{ success: boolean; message: string }> => {
+		const response = await api.delete(`/twilio-config/${id}`);
+		return response.data;
+	},
+
+	// List All Twilio Configurations
+	listTwilioConfigs: async (): Promise<TwilioConfigListResponse> => {
+		const response = await api.get('/twilio-config');
+		return response.data;
+	},
+
+	// Create Ultravox Configuration
+	createUltravoxConfig: async (data: UltravoxConfigData): Promise<UltravoxConfigResponse> => {
+		const response = await api.post('/ultravox-config', data);
+		return response.data;
+	},
+
+	// Get Ultravox Configuration by ID
+	getUltravoxConfigById: async (id: string): Promise<UltravoxConfigResponse> => {
+		const response = await api.get(`/ultravox-config/${id}`);
+		return response.data;
+	},
+
+	// Get Ultravox Configuration by Company ID
+	getUltravoxConfigByCompany: async (companyId: number): Promise<UltravoxConfigResponse> => {
+		console.log('Calling Ultravox API for company:', companyId);
+		const url = `/ultravox-config/company/${companyId}`;
+		console.log('API URL:', url);
+		try {
+			const response = await api.get(url);
+			console.log('API Response:', response.data);
+			return response.data;
+		} catch (error) {
+			console.error('API Error:', error);
+			if (error.response) {
+				console.error('Error Response:', error.response.data);
+				console.error('Error Status:', error.response.status);
+			}
+			throw error;
+		}
+	},
+
+	// Update Ultravox Configuration
+	updateUltravoxConfig: async (id: string, data: Partial<UltravoxConfigData>): Promise<UltravoxConfigResponse> => {
+		const response = await api.put(`/ultravox-config/${id}`, data);
+		return response.data;
+	},
+
+	// Delete Ultravox Configuration
+	deleteUltravoxConfig: async (id: string): Promise<{ success: boolean; message: string }> => {
+		const response = await api.delete(`/ultravox-config/${id}`);
+		return response.data;
+	},
+
+	// List All Ultravox Configurations
+	listUltravoxConfigs: async (): Promise<UltravoxConfigListResponse> => {
+		const response = await api.get('/ultravox-config');
+		return response.data;
+	},
 };
 
 

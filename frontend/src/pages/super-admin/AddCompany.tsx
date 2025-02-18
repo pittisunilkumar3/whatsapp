@@ -260,7 +260,7 @@ export default function CompanyRegistrationForm() {
           contact_person_mobile: formData.contact_person_mobile || undefined,
         }
 
-        const response = await axios.post('http://localhost:5000/api/companies', payload)
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/companies`, payload)
         if (response.status === 200 || response.status === 201) {
           alert('Company created successfully!')
           // Reset form

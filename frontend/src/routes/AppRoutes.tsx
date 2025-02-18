@@ -43,6 +43,7 @@ import { AddStaff } from '../pages/super-admin/AddStaff';
 import { Employees } from '../pages/company-admin/Employees';
 import { EmployeePermissions } from '../pages/company-admin/EmployeePermissions';
 import { AddEmployee } from '../pages/company-admin/AddEmployee';
+import { ThirdPartyUrl } from '../pages/settings/ThirdPartyUrl';
 
 // Employee Components
 import { EmployeeDashboard } from '../pages/employee/Dashboard';
@@ -156,6 +157,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="leads" element={<Leads />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="settings/third-party-url" element={<ThirdPartyUrl />} />
                 <Route path="employee-permissions/:id" element={<EmployeePermissions />} />
                 <Route path="role-management" element={<CompanyRoleManagement />} />
             </Routes>

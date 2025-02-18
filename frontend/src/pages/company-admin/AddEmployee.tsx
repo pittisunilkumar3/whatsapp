@@ -119,7 +119,7 @@ export default function EmployeeRegistrationForm() {
           // Add other fields as needed
         };
 
-        const response = await axios.post('http://localhost:5000/api/company-employees', payload);
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/company-employees`, payload);
         if (response.status === 200 || response.status === 201) {
           alert('Employee created successfully!');
           // Reset form

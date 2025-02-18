@@ -159,7 +159,7 @@ export const Voice: React.FC = () => {
             if (!companyId) return;
             setIsLoadingVoices(true);
             try {
-                const response = await fetch('http://localhost:5000/api/ultravox-calls/ultravox-voices', {
+                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/ultravox-calls/ultravox-voices`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -308,7 +308,7 @@ export const Voice: React.FC = () => {
         setIsCallingInProgress(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/ultravox-calls/ultravox-test-call', {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/ultravox-calls/ultravox-test-call`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

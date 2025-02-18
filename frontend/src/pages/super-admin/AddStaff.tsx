@@ -126,7 +126,7 @@ export default function StaffRegistrationForm() {
           // Add other fields as needed
         };
 
-        const response = await axios.post('http://localhost:5000/api/staff', payload);
+        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/staff`, payload);
         if (response.status === 200 || response.status === 201) {
           alert('Staff member created successfully!');
           // Reset form

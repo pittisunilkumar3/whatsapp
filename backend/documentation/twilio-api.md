@@ -2,7 +2,7 @@
 
 ## Base URL
 ```
-http://localhost:3000/api/twilio-config
+http://localhost:5000/api/twilio-config
 ```
 
 ## Authentication
