@@ -29,6 +29,10 @@ const callAgentRoutes = require('./src/callagent/routes/callAgentRoutes');
 const callLeadRoutes = require('./src/callagent/routes/callLeadRoutes');
 const callRoutes = require('./src/callagent/routes/callRoutes');
 const callReportRoutes = require('./src/callagent/routes/callReportRoutes');
+const voiceCampaignRoutes = require('./src/routes/voiceCampaigns');
+const voiceLeadRoutes = require('./src/routes/voiceLeads');
+const companyVoiceCampaignRoutes = require('./src/routes/companyVoiceCampaigns');
+const companyVoiceLeadRoutes = require('./src/routes/companyVoiceLeads');
 
 const ultravoxConfigurationRoutes = require('./src/routes/ultravoxConfigurationRoutes');
 const ultravoxCallRoutes = require('./src/routes/ultravoxCallRoutes');
@@ -75,6 +79,10 @@ app.use('/api/callagent/agents', callAgentRoutes);
 app.use('/api/callagent/leads', callLeadRoutes);
 app.use('/api/callagent/calls', callRoutes);
 app.use('/api/callagent/reports', callReportRoutes);
+app.use('/api/voice-campaigns', voiceCampaignRoutes);
+app.use('/api/voice-leads', voiceLeadRoutes);
+app.use('/api/company/voice-campaigns', companyVoiceCampaignRoutes);
+app.use('/api/company/voice-leads', companyVoiceLeadRoutes);
 
 app.use('/api/ultravox-config', ultravoxConfigurationRoutes);
 app.use('/api/ultravox-calls', ultravoxCallRoutes);
