@@ -56,6 +56,7 @@ POST /api/voice-campaigns
 
 #### Example Request Body
 ```json
+
 {
     "name": "Customer Survey Campaign",
     "description": "Automated survey for customer satisfaction",
@@ -89,6 +90,7 @@ POST /api/voice-campaigns
     "recurrence_rule": "FREQ=DAILY;INTERVAL=1",
     "company_id": 1
 }
+
 ```
 
 #### Response (201 Created)
