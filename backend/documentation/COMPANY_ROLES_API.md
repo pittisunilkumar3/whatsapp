@@ -76,6 +76,57 @@ CREATE TABLE company_roles (
 }
 ```
 
+### Get Roles by Company ID
+- **URL:** `/api/company-roles`
+- **Method:** `GET`
+- **Query Parameters:**
+  - `company_id` (required): The ID of the company to fetch roles for
+  - `is_active` (optional): Filter by active status (0 or 1)
+  - `is_system` (optional): Filter by system role status (0 or 1)
+- **Success Response:** (200 OK)
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "company_id": 1,
+      "name": "Manager",
+      "slug": "manager",
+      "is_active": 1,
+      "is_system": 0,
+      "is_superadmin": 0
+    },
+    {
+      "id": 2,
+      "company_id": 1,
+      "name": "Employee",
+      "slug": "employee",
+      "is_active": 1,
+      "is_system": 0,
+      "is_superadmin": 0
+    }
+  ]
+}
+```
+- **Error Response:** (500 Internal Server Error)
+```json
+{
+  "success": false,
+  "message": "Failed to fetch company roles",
+  "error": "Error details"
+}
+```
+
+#### Example Request
+```bash
+# Fetch all roles for company with ID 1
+GET /api/company-roles?company_id=1
+
+# Fetch active roles for company with ID 1
+GET /api/company-roles?company_id=1&is_active=1
+```
+
 ### Get Company Role by ID
 - **URL:** `/api/company-roles/:id`
 - **Method:** `GET`

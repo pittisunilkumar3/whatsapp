@@ -258,6 +258,31 @@ interface UltravoxConfigListResponse {
 	}>;
 }
 
+interface CreateEmployeeResponse {
+	success: boolean;
+	message: string;
+	data: {
+		id: number;
+		company_id: number;
+		employee_id: string;
+		name: string;
+		email: string;
+		// ... other employee fields
+	};
+}
+
+interface AssignRoleResponse {
+	success: boolean;
+	message: string;
+	data: {
+		id: number;
+		company_id: number;
+		role_id: number;
+		company_employee_id: number;
+		is_active: number;
+	};
+}
+
 export const apiService = {
 	superAdminLogin: async (email: string, password: string): Promise<LoginResponse> => {
 		console.log('Attempting super admin login...');
@@ -454,6 +479,74 @@ export const apiService = {
 	// List All Ultravox Configurations
 	listUltravoxConfigs: async (): Promise<UltravoxConfigListResponse> => {
 		const response = await api.get('/ultravox-config');
+		return response.data;
+	},
+
+	// Create Employee
+	createEmployee: async (data: {
+		company_id: number;
+		employee_id: string;
+		lang_id: number;
+		currency_id: number;
+		department: number | null;
+		designation: number | null;
+		qualification: string;
+		work_exp: string;
+		name: string;
+		surname: string;
+		father_name: string;
+		mother_name: string;
+		contact_no: string;
+		emergency_contact_no: string;
+		email: string;
+		dob: string;
+		marital_status: string;
+		date_of_joining: string | null;
+		date_of_leaving: string | null;
+		local_address: string;
+		permanent_address: string;
+		note: string;
+		image: string;
+		password: string;
+		gender: string;
+		account_title: string;
+		bank_account_no: string;
+		bank_name: string;
+		ifsc_code: string;
+		bank_branch: string;
+		payscale: string;
+		basic_salary: number | null;
+		epf_no: string;
+		contract_type: string;
+		shift: string;
+		location: string;
+		facebook: string;
+		twitter: string;
+		linkedin: string;
+		instagram: string;
+		resume: string;
+		joining_letter: string;
+		resignation_letter: string;
+		other_document_name: string;
+		other_document_file: string;
+		user_id: number;
+		is_active: number;
+		verification_code: string;
+		zoom_api_key: string | null;
+		zoom_api_secret: string | null;
+	}): Promise<CreateEmployeeResponse> => {
+		const response = await api.post('/company-employees', data);
+		return response.data;
+	},
+
+	// Assign Role to Employee
+	assignRoleToEmployee: async (data: {
+		company_id: number;
+		role_id: number;
+		company_employee_id: number;
+		is_active: number;
+	}): Promise<AssignRoleResponse> => {
+		const response = await api.post('/company-employee-roles', data);
 		return response.data;
 	},
 };
