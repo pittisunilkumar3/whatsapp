@@ -353,6 +353,10 @@ export const Voice: React.FC = () => {
         navigate('/company-admin/communication/voice/new-campaign');
     };
 
+    const handleViewDetails = (id: string) => {
+        navigate(`/company-admin/communication/voice/${id}`);
+    };
+
     const renderCampaigns = () => (
         <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -389,7 +393,7 @@ export const Voice: React.FC = () => {
                     <VoiceCampaignCard
                         key={campaign.id}
                         campaign={campaign}
-                        onViewDetails={(id) => console.log('View details:', id)}
+                        onViewDetails={handleViewDetails}
                     />
                 ))}
             </div>
