@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -6,71 +6,77 @@ import { StatusPill } from '../../components/ui/StatusPill';
 import { DataTable } from '../../components/ui/DataTable';
 import { Modal } from '../../components/ui/Modal';
 import { Dropdown } from '../../components/ui/Dropdown';
-import { 
-	Users,
-	Plus,
-	Search,
-	Mail,
-	Phone,
-	MoreVertical,
-	Edit,
-	Trash2,
-	Building2,
-	UserPlus
-} from 'lucide-react';
+import { Users, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Switch } from '../../components/ui/Switch';
 
 interface Employee {
-	id: string;
+	id: number;
+	company_id: number;
 	employee_id: string;
 	name: string;
+	surname: string;
 	email: string;
-	phone: string;
-	role: string;
-	department: string;
-	status: 'active' | 'inactive';
-	joined_date: string;
-	performance: {
-		responseRate: number;
-		conversionRate: number;
-		avgResponseTime: string;
-	};
+	contact_no: string;
+	department: number | null;
+	designation: number | null;
+	qualification: string;
+	is_active: number;
 }
 
 const mockEmployees: Employee[] = [
 	{
-		id: '1',
+		id: 1,
+		company_id: 1,
 		employee_id: 'EMP001',
-		name: 'John Smith',
+		name: 'John',
+		surname: 'Smith',
 		email: 'john@example.com',
-		phone: '+1 234 567 8900',
-		role: 'Sales Representative',
-		department: 'Sales',
-		status: 'active',
-		joined_date: '2024-01-15',
-		performance: {
-			responseRate: 92,
-			conversionRate: 28,
-			avgResponseTime: '15m',
-		}
+		contact_no: '+1 234 567 8900',
+		department: 1,
+		designation: 1,
+		qualification: 'Bachelor',
+		is_active: 1
 	},
 	{
-		id: '2',
+		id: 2,
+		company_id: 1,
 		employee_id: 'EMP002',
-		name: 'Sarah Johnson',
+		name: 'Sarah',
+		surname: 'Johnson',
 		email: 'sarah@example.com',
-		phone: '+1 234 567 8901',
-		role: 'Sales Manager',
-		department: 'Sales',
-		status: 'active',
-		joined_date: '2024-02-01',
-		performance: {
-			responseRate: 95,
-			conversionRate: 32,
-			avgResponseTime: '12m',
-		}
+		contact_no: '+1 234 567 8901',
+		department: 1,
+		designation: 2,
+		qualification: 'Master',
+		is_active: 1
 	},
 ];
+
+// Add department and designation mappings
+const departmentMap: { [key: number]: string } = {
+	1: 'Sales',
+	2: 'Marketing',
+	3: 'Engineering',
+	4: 'HR',
+	5: 'Finance'
+};
+
+const designationMap: { [key: number]: string } = {
+	1: 'Manager',
+	2: 'Team Lead',
+	3: 'Senior Executive',
+	4: 'Executive',
+	5: 'Associate'
+};
+
+type EmployeeColumn = {
+	header: string;
+	accessorKey: keyof Employee;
+	key: keyof Employee;
+	title: string;
+	cell?: (props: { row: { original: Employee } }) => React.ReactNode;
+};
 
 export const Employees: React.FC = () => {
 	const navigate = useNavigate();
@@ -83,64 +89,123 @@ export const Employees: React.FC = () => {
 		role: '',
 		department: ''
 	});
+	const [employees, setEmployees] = useState<Employee[]>([]);
 
-	const columns = [
+	useEffect(() => {
+		const fetchEmployees = async () => {
+			try {
+				const response = await fetch('http://localhost:5000/api/company-employees/company/1');
+				const data = await response.json();
+				setEmployees(data.data);
+			} catch (error) {
+				console.error('Error fetching employees:', error);
+			}
+		};
+
+		fetchEmployees();
+	}, []);
+
+	const columns: EmployeeColumn[] = [
 		{
 			header: 'Employee ID',
-			accessorKey: 'employee_id'
+			accessorKey: 'employee_id',
+			key: 'employee_id',
+			title: 'Employee ID'
 		},
 		{
 			header: 'Name',
-			accessorKey: 'name'
+			accessorKey: 'name',
+			key: 'name',
+			title: 'Name',
+			cell: ({ row }) => `${row.original.name} ${row.original.surname}`
 		},
 		{
 			header: 'Email',
-			accessorKey: 'email'
+			accessorKey: 'email',
+			key: 'email',
+			title: 'Email'
+		},
+		{
+			header: 'Contact',
+			accessorKey: 'contact_no',
+			key: 'contact_no',
+			title: 'Contact'
 		},
 		{
 			header: 'Department',
-			accessorKey: 'department'
+			accessorKey: 'department',
+			key: 'department',
+			title: 'Department',
+			cell: ({ row }) => departmentMap[row.original.department || 0] || 'Not Assigned'
 		},
 		{
-			header: 'Role',
-			accessorKey: 'role'
+			header: 'Designation',
+			accessorKey: 'designation',
+			key: 'designation',
+			title: 'Designation',
+			cell: ({ row }) => designationMap[row.original.designation || 0] || 'Not Assigned'
 		},
 		{
 			header: 'Status',
-			accessorKey: 'status',
-			cell: (info: any) => <StatusPill status={info.getValue()} />
-		},
-		{
-			header: 'Performance',
-			cell: ({ row }: any) => (
-				<div className="flex items-center space-x-4">
-					<div className="text-sm">
-						<span className="font-medium">{row.original.performance.responseRate}%</span>
-						<span className="text-gray-500 ml-1">Response</span>
-					</div>
-					<div className="text-sm">
-						<span className="font-medium">{row.original.performance.conversionRate}%</span>
-						<span className="text-gray-500 ml-1">Conv.</span>
-					</div>
+			accessorKey: 'is_active',
+			key: 'is_active',
+			title: 'Status',
+			cell: ({ row }) => (
+				<div className="flex items-center justify-center">
+					<input
+						type="checkbox"
+						className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+						checked={row.original.is_active === 1}
+						onChange={(e) => {
+							const isActive = e.target.checked ? 1 : 0;
+							console.log('Toggling status for employee:', row.original.id, isActive);
+							// TODO: Implement API call to update status
+						}}
+					/>
 				</div>
 			)
 		},
 		{
 			header: 'Actions',
-			cell: () => (
-				<Dropdown
-					trigger={
-						<Button variant="ghost" size="sm">
-							<MoreVertical className="w-4 h-4" />
-						</Button>
-					}
-					items={[
-						{ label: 'Edit', onClick: () => {} },
-						{ label: 'View Details', onClick: () => {} },
-						{ label: 'Manage Permissions', onClick: () => {} },
-						{ label: 'Deactivate', onClick: () => {} }
-					]}
-				/>
+			key: 'actions' as keyof Employee,
+			accessorKey: 'id',
+			title: 'Actions',
+			cell: ({ row }) => (
+				<div className="flex items-center gap-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2"
+						onClick={() => {
+							console.log('Edit employee:', row.original.id);
+							// TODO: Implement edit functionality
+						}}
+					>
+						Edit
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-green-600 hover:text-green-700 hover:bg-green-50 p-2"
+						onClick={() => {
+							console.log('View employee:', row.original.id);
+							// TODO: Implement view functionality
+						}}
+					>
+						View
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
+						onClick={() => {
+							console.log('Delete employee:', row.original.id);
+							// TODO: Implement delete functionality
+						}}
+					>
+						Delete
+					</Button>
+				</div>
 			)
 		}
 	];
@@ -161,7 +226,7 @@ export const Employees: React.FC = () => {
 					</p>
 				</div>
 				<Button onClick={() => navigate('/company-admin/addemployee')} className="w-full sm:w-auto">
-					<UserPlus className="w-5 h-5 mr-2" />
+					<Users className="w-5 h-5 mr-2" />
 					Add Employee
 				</Button>
 			</div>
@@ -173,7 +238,7 @@ export const Employees: React.FC = () => {
 					</div>
 					<div>
 						<h3 className="text-lg font-semibold">Total Employees</h3>
-						<p className="text-2xl font-bold text-blue-600">{mockEmployees.length}</p>
+						<p className="text-2xl font-bold text-blue-600">{employees.length}</p>
 					</div>
 				</Card>
 				
@@ -184,7 +249,7 @@ export const Employees: React.FC = () => {
 					<div>
 						<h3 className="text-lg font-semibold">Active</h3>
 						<p className="text-2xl font-bold text-green-600">
-							{mockEmployees.filter(emp => emp.status === 'active').length}
+							{employees.filter(emp => emp.is_active === 1).length}
 						</p>
 					</div>
 				</Card>
@@ -196,7 +261,7 @@ export const Employees: React.FC = () => {
 					<div>
 						<h3 className="text-lg font-semibold">Departments</h3>
 						<p className="text-2xl font-bold text-yellow-600">
-							{new Set(mockEmployees.map(emp => emp.department)).size}
+							{new Set(employees.map(emp => emp.department)).size}
 						</p>
 					</div>
 				</Card>
@@ -210,15 +275,14 @@ export const Employees: React.FC = () => {
 						onChange={(e) => setSearchQuery(e.target.value)}
 						className="pl-10"
 					/>
-					<Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+					<Users className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
 				</div>
 			</Card>
 
 			<Card className="p-6">
 				<DataTable
 					columns={columns}
-					data={mockEmployees}
-					pagination
+					data={employees}
 				/>
 			</Card>
 
@@ -244,7 +308,7 @@ export const Employees: React.FC = () => {
 							Email
 						</label>
 						<div className="flex items-center">
-							<Mail className="w-5 h-5 text-gray-400 mr-2" />
+							<Users className="w-5 h-5 text-gray-400 mr-2" />
 							<Input
 								type="email"
 								value={newEmployee.email}
@@ -259,7 +323,7 @@ export const Employees: React.FC = () => {
 							Phone Number
 						</label>
 						<div className="flex items-center">
-							<Phone className="w-5 h-5 text-gray-400 mr-2" />
+							<Users className="w-5 h-5 text-gray-400 mr-2" />
 							<Input
 								value={newEmployee.phone}
 								onChange={(e) => setNewEmployee(prev => ({ ...prev, phone: e.target.value }))}
