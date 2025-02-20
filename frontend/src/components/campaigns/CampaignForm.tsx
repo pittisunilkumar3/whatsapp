@@ -9,10 +9,10 @@ import {
 	Users,
 	Clock,
 	AlertCircle,
-	File,
-	Volume,
-	Settings,
-	Check
+	FileText,
+	VolumeX,
+	Cog,
+	CheckCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -51,6 +51,12 @@ type CampaignFormData = {
 	end_date: string;
 	recurrence_rule: string;
 	company_id: number;
+};
+
+type Employee = {
+	id: number;
+	name: string;
+	role?: string;
 };
 
 const campaignSchema = z.object({
@@ -107,6 +113,13 @@ interface CampaignFormProps {
 }
 
 const STORAGE_KEY = 'campaign_form_data';
+
+const MOCK_EMPLOYEES: Employee[] = [
+	{ id: 1, name: "John Doe", role: "Sales Manager" },
+	{ id: 2, name: "Jane Smith", role: "Sales Representative" },
+	{ id: 3, name: "Mike Johnson", role: "Account Executive" },
+	// Add more mock employees as needed
+];
 
 export const CampaignForm = forwardRef<{
 	submitForm: () => Promise<void>;
@@ -179,43 +192,30 @@ export const CampaignForm = forwardRef<{
 				status: data.status,
 				priority: data.priority,
 				campaign_type: data.campaign_type,
-				voice_settings: {
-					language: data.ai_voice_language,
-					gender: data.ai_voice_gender
-				},
-				script_settings: {
-					system_prompt: data.system_prompt,
-					main_script: data.script_template,
-					fallback_script: data.fallback_script || ''
-				},
-				schedule: {
-					start_date: new Date(data.start_date).toISOString(),
-					end_date: new Date(data.end_date).toISOString(),
-					expected_completion_date: new Date(data.expected_completion_date).toISOString(),
-					calling_hours: {
-						start: `${data.calling_hours_start}:00`,
-						end: `${data.calling_hours_end}:00`
-					},
-					working_days: data.working_days,
-					time_zone: data.time_zone
-				},
-				call_settings: {
-					calls_per_day: Number(data.calls_per_day),
-					max_attempts_per_lead: Number(data.max_attempts_per_lead),
-					retry_delay_minutes: Number(data.retry_delay_minutes),
-					call_duration_limit: Number(data.call_duration_limit)
-				},
+				calls_per_day: Number(data.calls_per_day),
+				calling_hours_start: `${data.calling_hours_start}:00`,
+				calling_hours_end: `${data.calling_hours_end}:00`,
+				time_zone: data.time_zone,
+				working_days: data.working_days,
+				ai_voice_id: 'voice-123',
+				ai_voice_language: data.ai_voice_language,
+				ai_voice_gender: data.ai_voice_gender,
+				system_prompt: data.system_prompt,
+				script_template: data.script_template,
+				fallback_script: data.fallback_script || '',
+				max_attempts_per_lead: Number(data.max_attempts_per_lead),
+				retry_delay_minutes: Number(data.retry_delay_minutes),
+				call_duration_limit: Number(data.call_duration_limit),
 				success_criteria: data.success_criteria,
-				budget_settings: {
-					total_budget: Number(data.budget),
-					cost_per_call: Number(data.cost_per_call)
-				},
-				team_settings: {
-					owner_id: data.owner_id,
-					team_members: data.team_members
-				},
+				expected_completion_date: data.expected_completion_date,
+				budget: Number(data.budget),
+				cost_per_call: Number(data.cost_per_call),
+				owner_id: data.owner_id,
+				team_members: data.team_members,
 				tags: data.tags,
 				notes: data.notes || '',
+				start_date: `${data.start_date} 09:00:00`,
+				end_date: `${data.end_date} 17:00:00`,
 				recurrence_rule: data.recurrence_rule,
 				company_id: data.company_id
 			};
@@ -232,12 +232,12 @@ export const CampaignForm = forwardRef<{
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				console.error('API Error Response:', errorData); // For debugging
+				console.error('API Error Response:', errorData);
 				throw new Error(errorData.message || 'Error creating voice campaign');
 			}
 
 			const responseData = await response.json();
-			console.log('API Success Response:', responseData); // For debugging
+			console.log('API Success Response:', responseData);
 
 			// Clear stored form data on successful submission
 			localStorage.removeItem(STORAGE_KEY);
@@ -367,6 +367,76 @@ export const CampaignForm = forwardRef<{
 											</select>
 											{errors.priority && (
 												<p className="mt-1.5 text-sm text-red-500">{errors.priority.message}</p>
+											)}
+										</div>
+									)}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Controller
+									name="team_members"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-600 mb-1.5">
+												{renderRequiredLabel('Team Members', false)}
+											</label>
+											<select
+												className={`w-full px-4 py-2.5 rounded-md border
+												text-gray-800 bg-white
+												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+												disabled:bg-gray-50 disabled:cursor-not-allowed
+												transition-all duration-200
+												${errors.team_members ? 'border-red-500' : 'border-gray-300'}`}
+												value=""
+												onChange={(e) => {
+													const selectedId = parseInt(e.target.value);
+													if (selectedId && !field.value.includes(selectedId)) {
+														field.onChange([...field.value, selectedId]);
+													}
+												}}
+											>
+												<option value="">Select team member</option>
+												{MOCK_EMPLOYEES.map((employee) => (
+													<option 
+														key={employee.id} 
+														value={employee.id}
+														disabled={field.value.includes(employee.id)}
+													>
+														{employee.name} - {employee.role}
+													</option>
+												))}
+											</select>
+											
+											<div className="mt-2 space-y-2">
+												{field.value.map((memberId: number) => {
+													const employee = MOCK_EMPLOYEES.find(e => e.id === memberId);
+													if (!employee) return null;
+													
+													return (
+														<div 
+															key={memberId}
+															className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+														>
+															<span className="text-sm text-gray-700">
+																{employee.name} - {employee.role}
+															</span>
+															<button
+																type="button"
+																className="text-red-500 hover:text-red-700"
+																onClick={() => {
+																	field.onChange(field.value.filter((id: number) => id !== memberId));
+																}}
+															>
+																Remove
+															</button>
+														</div>
+													);
+												})}
+											</div>
+											
+											{errors.team_members && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.team_members.message}</p>
 											)}
 										</div>
 									)}
