@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { CampaignForm } from '../../../../components/campaigns/CampaignForm';
 import { Card } from '../../../../components/ui/Card';
 import { Button } from '../../../../components/ui/Button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const steps = [
     { id: 'basic', title: 'Basic Information', description: 'Campaign details and objectives' },
@@ -15,16 +16,48 @@ const steps = [
 
 export const NewCampaign: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(0);
+    const formRef = useRef<any>(null);
 
-    const nextStep = () => {
+    const validateCurrentStep = async () => {
+        if (!formRef.current) return false;
+        
+        const fieldsToValidate = {
+            0: ['name', 'priority', 'campaign_type', 'budget', 'cost_per_call'],
+            1: ['ai_voice_language', 'ai_voice_gender', 'ai_voice_id'],
+            2: ['system_prompt', 'script_template'],
+            3: ['start_date', 'end_date', 'calling_hours_start', 'calling_hours_end', 'calls_per_day', 'max_attempts_per_lead', 'retry_delay_minutes'],
+            4: [], // Lead management step doesn't have required fields
+            5: [] // Review step doesn't have required fields
+        }[currentStep] || [];
+
+        const result = await formRef.current.trigger(fieldsToValidate);
+        if (!result) {
+            const errors = formRef.current.formState.errors;
+            const errorFields = Object.keys(errors)
+                .filter(key => fieldsToValidate.includes(key))
+                .map(key => key.replace(/_/g, ' '));
+            
+            if (errorFields.length > 0) {
+                toast.error(`Please fix the following fields: ${errorFields.join(', ')}`);
+            }
+        }
+        return result;
+    };
+
+    const nextStep = async () => {
+        const isValid = await validateCurrentStep();
+        if (!isValid) return;
+
         if (currentStep < steps.length - 1) {
             setCurrentStep(currentStep + 1);
+            window.scrollTo(0, 0);
         }
     };
 
     const prevStep = () => {
         if (currentStep > 0) {
             setCurrentStep(currentStep - 1);
+            window.scrollTo(0, 0);
         }
     };
 
@@ -75,7 +108,10 @@ export const NewCampaign: React.FC = () => {
                             <h2 className="text-2xl font-semibold text-gray-900">{steps[currentStep].title}</h2>
                             <p className="mt-2 text-sm text-gray-500">{steps[currentStep].description}</p>
                         </div>
-                        <CampaignForm currentStep={currentStep} />
+                        <CampaignForm 
+                            currentStep={currentStep} 
+                            ref={formRef}
+                        />
                     </div>
                 </Card>
 
@@ -90,14 +126,22 @@ export const NewCampaign: React.FC = () => {
                         <ChevronLeft className="w-5 h-5" />
                         Previous Step
                     </Button>
-                    <Button
-                        onClick={nextStep}
-                        disabled={currentStep === steps.length - 1}
-                        className="flex items-center gap-3 px-6 py-3 text-base bg-blue-600 hover:bg-blue-700"
-                    >
-                        {currentStep === steps.length - 1 ? 'Launch Campaign' : 'Next Step'}
-                        <ChevronRight className="w-5 h-5" />
-                    </Button>
+                    {currentStep === steps.length - 1 ? (
+                        <Button
+                            onClick={() => formRef.current?.submitForm()}
+                            className="flex items-center gap-3 px-6 py-3 text-base bg-blue-600 hover:bg-blue-700"
+                        >
+                            Launch Campaign
+                        </Button>
+                    ) : (
+                        <Button
+                            onClick={nextStep}
+                            className="flex items-center gap-3 px-6 py-3 text-base bg-blue-600 hover:bg-blue-700"
+                        >
+                            Next Step
+                            <ChevronRight className="w-5 h-5" />
+                        </Button>
+                    )}
                 </div>
             </div>
         </div>

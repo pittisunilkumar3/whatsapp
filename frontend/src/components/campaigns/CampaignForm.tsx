@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -15,123 +15,262 @@ import {
 	Check
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { toast } from 'react-hot-toast';
 
-// Form validation schema
+type CampaignFormData = {
+	name: string;
+	description?: string;
+	status: 'draft' | 'active' | 'paused' | 'completed';
+	priority: 'low' | 'medium' | 'high';
+	campaign_type: 'outbound' | 'inbound';
+	calls_per_day: number;
+	calling_hours_start: string;
+	calling_hours_end: string;
+	time_zone: string;
+	working_days: string[];
+	ai_voice_language: string;
+	ai_voice_gender: 'male' | 'female';
+	system_prompt: string;
+	script_template: string;
+	fallback_script?: string;
+	max_attempts_per_lead: number;
+	retry_delay_minutes: number;
+	call_duration_limit: number;
+	success_criteria: 'call_completed' | 'positive_response' | 'appointment_scheduled' | 'sale_made';
+	expected_completion_date: string;
+	budget: number;
+	cost_per_call: number;
+	owner_id: number;
+	team_members: number[];
+	tags: string[];
+	notes?: string;
+	start_date: string;
+	end_date: string;
+	recurrence_rule: string;
+	company_id: number;
+};
+
 const campaignSchema = z.object({
-	name: z.string().min(3, 'Name must be at least 3 characters'),
+	name: z.string()
+		.min(3, 'Campaign name must be at least 3 characters')
+		.max(100, 'Campaign name cannot exceed 100 characters'),
 	description: z.string().optional(),
 	status: z.enum(['draft', 'active', 'paused', 'completed']),
 	priority: z.enum(['low', 'medium', 'high']),
 	campaign_type: z.enum(['outbound', 'inbound']),
-	calls_per_day: z.number().min(1).max(1000),
-	calling_hours_start: z.string(),
-	calling_hours_end: z.string(),
-	time_zone: z.string(),
-	working_days: z.array(z.string()),
-	ai_voice_id: z.string(),
-	ai_voice_language: z.string(),
+	calls_per_day: z.coerce.number()
+		.int('Must be a whole number')
+		.min(1, 'Must make at least 1 call per day')
+		.max(1000, 'Maximum 1000 calls per day'),
+	calling_hours_start: z.string()
+		.min(1, 'Start time is required')
+		.regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:MM)'),
+	calling_hours_end: z.string()
+		.min(1, 'End time is required')
+		.regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:MM)'),
+	time_zone: z.string().min(1, 'Time zone is required'),
+	working_days: z.array(z.string()).min(1, 'Select at least one working day'),
+	ai_voice_language: z.string().min(1, 'Language is required'),
 	ai_voice_gender: z.enum(['male', 'female']),
-	system_prompt: z.string(),
-	script_template: z.string(),
-	fallback_script: z.string(),
-	max_attempts_per_lead: z.number().min(1).max(10),
-	retry_delay_minutes: z.number().min(1),
-	call_duration_limit: z.number().min(30),
-	success_criteria: z.string(),
-	expected_completion_date: z.string(),
-	budget: z.number().min(0),
-	cost_per_call: z.number().min(0),
+	system_prompt: z.string().min(1, 'System prompt is required'),
+	script_template: z.string().min(1, 'Script template is required'),
+	fallback_script: z.string().optional(),
+	max_attempts_per_lead: z.coerce.number()
+		.int('Must be a whole number')
+		.min(1, 'Minimum 1 attempt')
+		.max(10, 'Maximum 10 attempts'),
+	retry_delay_minutes: z.coerce.number()
+		.int('Must be a whole number')
+		.min(1, 'Minimum 1 minute'),
+	call_duration_limit: z.coerce.number()
+		.int('Must be a whole number')
+		.min(30, 'Minimum 30 seconds'),
+	success_criteria: z.enum(['call_completed', 'positive_response', 'appointment_scheduled', 'sale_made']),
+	expected_completion_date: z.string().min(1, 'Completion date is required'),
+	budget: z.coerce.number().min(0, 'Budget must be positive'),
+	cost_per_call: z.coerce.number().min(0, 'Cost per call must be positive'),
 	owner_id: z.number(),
 	team_members: z.array(z.number()),
 	tags: z.array(z.string()),
 	notes: z.string().optional(),
-	start_date: z.string(),
-	end_date: z.string(),
+	start_date: z.string().min(1, 'Start date is required'),
+	end_date: z.string().min(1, 'End date is required'),
 	recurrence_rule: z.string(),
 	company_id: z.number(),
 });
-
-type CampaignFormData = z.infer<typeof campaignSchema>;
 
 interface CampaignFormProps {
 	currentStep: number;
 }
 
-export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
+const STORAGE_KEY = 'campaign_form_data';
+
+export const CampaignForm = forwardRef<{
+	submitForm: () => Promise<void>;
+	trigger: (fields?: string[]) => Promise<boolean>;
+	formState: { errors: any };
+	getValues: () => any;
+}, CampaignFormProps>(({ currentStep }, ref) => {
 	const navigate = useNavigate();
 	const [isLoading, setIsLoading] = useState(false);
-	const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
-	const [isPlaying, setIsPlaying] = useState(false);
 	const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-	const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<CampaignFormData>({
+	// Initialize form with stored data if available
+	const storedData = localStorage.getItem(STORAGE_KEY);
+	const initialData = {
+		name: '',
+		description: '',
+		status: 'draft',
+		priority: 'medium',
+		campaign_type: 'outbound',
+		calls_per_day: 50,
+		calling_hours_start: '09:00',
+		calling_hours_end: '17:00',
+		time_zone: 'UTC',
+		working_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+		ai_voice_language: 'en-US',
+		ai_voice_gender: 'female',
+		system_prompt: '',
+		script_template: '',
+		fallback_script: '',
+		max_attempts_per_lead: 3,
+		retry_delay_minutes: 60,
+		call_duration_limit: 300,
+		success_criteria: 'call_completed',
+		expected_completion_date: new Date().toISOString().split('T')[0],
+		budget: 1000,
+		cost_per_call: 0.5,
+		owner_id: 1,
+		team_members: [],
+		tags: [],
+		notes: '',
+		start_date: '',
+		end_date: '',
+		recurrence_rule: 'FREQ=DAILY;INTERVAL=1',
+		company_id: 1,
+		...(storedData ? JSON.parse(storedData) : {})
+	};
+
+	const { 
+		control,
+		register, 
+		handleSubmit, 
+		formState: { errors, isValid }, 
+		watch, 
+		setValue,
+		trigger,
+		getValues
+	} = useForm<CampaignFormData>({
 		resolver: zodResolver(campaignSchema),
-		defaultValues: {
-			name: '',
-			description: '',
-			status: 'draft',
-			priority: 'medium',
-			campaign_type: 'outbound',
-			calls_per_day: 50,
-			calling_hours_start: '09:00',
-			calling_hours_end: '17:00',
-			time_zone: 'UTC',
-			working_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-			ai_voice_id: '',
-			ai_voice_language: 'en-US',
-			ai_voice_gender: 'female',
-			system_prompt: '',
-			script_template: '',
-			fallback_script: '',
-			max_attempts_per_lead: 3,
-			retry_delay_minutes: 60,
-			call_duration_limit: 300,
-			success_criteria: '',
-			expected_completion_date: '',
-			budget: 1000,
-			cost_per_call: 0.5,
-			owner_id: 1,
-			team_members: [],
-			tags: [],
-			notes: '',
-			start_date: '',
-			end_date: '',
-			recurrence_rule: 'FREQ=DAILY;INTERVAL=1',
-			company_id: 1,
-		}
+		defaultValues: initialData,
+		mode: 'onChange'
 	});
 
 	const onSubmit = async (data: CampaignFormData) => {
 		setIsLoading(true);
 		try {
-			const formData = new FormData();
-			Object.entries(data).forEach(([key, value]) => {
-				formData.append(key, JSON.stringify(value));
-			});
-			
-			if (uploadedFile) {
-				formData.append('leadFile', uploadedFile);
-			}
+			// Format the data according to API requirements
+			const formattedData = {
+				name: data.name,
+				description: data.description || '',
+				status: data.status,
+				priority: data.priority,
+				campaign_type: data.campaign_type,
+				voice_settings: {
+					language: data.ai_voice_language,
+					gender: data.ai_voice_gender
+				},
+				script_settings: {
+					system_prompt: data.system_prompt,
+					main_script: data.script_template,
+					fallback_script: data.fallback_script || ''
+				},
+				schedule: {
+					start_date: new Date(data.start_date).toISOString(),
+					end_date: new Date(data.end_date).toISOString(),
+					expected_completion_date: new Date(data.expected_completion_date).toISOString(),
+					calling_hours: {
+						start: `${data.calling_hours_start}:00`,
+						end: `${data.calling_hours_end}:00`
+					},
+					working_days: data.working_days,
+					time_zone: data.time_zone
+				},
+				call_settings: {
+					calls_per_day: Number(data.calls_per_day),
+					max_attempts_per_lead: Number(data.max_attempts_per_lead),
+					retry_delay_minutes: Number(data.retry_delay_minutes),
+					call_duration_limit: Number(data.call_duration_limit)
+				},
+				success_criteria: data.success_criteria,
+				budget_settings: {
+					total_budget: Number(data.budget),
+					cost_per_call: Number(data.cost_per_call)
+				},
+				team_settings: {
+					owner_id: data.owner_id,
+					team_members: data.team_members
+				},
+				tags: data.tags,
+				notes: data.notes || '',
+				recurrence_rule: data.recurrence_rule,
+				company_id: data.company_id
+			};
+
+			console.log('Submitting data:', formattedData); // For debugging
 
 			const response = await fetch('/api/voice-campaigns', {
 				method: 'POST',
-				body: formData
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(formattedData)
 			});
 
 			if (!response.ok) {
-				throw new Error('Failed to create campaign');
+				const errorData = await response.json();
+				console.error('API Error Response:', errorData); // For debugging
+				throw new Error(errorData.message || 'Error creating voice campaign');
 			}
 
+			const responseData = await response.json();
+			console.log('API Success Response:', responseData); // For debugging
+
+			// Clear stored form data on successful submission
+			localStorage.removeItem(STORAGE_KEY);
+			toast.success('Campaign created successfully!');
 			navigate('/company-admin/communication/voice/campaigns');
 		} catch (error) {
 			console.error('Error creating campaign:', error);
+			if (error instanceof Error) {
+				toast.error(`Failed to create campaign: ${error.message}`);
+			} else {
+				toast.error('Failed to create campaign. Please try again.');
+			}
 		} finally {
 			setIsLoading(false);
 		}
 	};
+
+	// Expose form methods to parent component
+	useImperativeHandle(ref, () => ({
+		submitForm: handleSubmit(onSubmit),
+		trigger,
+		formState: { errors },
+		getValues
+	}), [handleSubmit, onSubmit, trigger, errors, getValues]);
+
+	// Save form data to localStorage whenever it changes
+	const formData = watch();
+	useEffect(() => {
+		const timeoutId = setTimeout(() => {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+		}, 500);
+		return () => clearTimeout(timeoutId);
+	}, [formData]);
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
@@ -140,37 +279,16 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
 		}
 	};
 
-	const handlePreviewVoice = async () => {
-		if (isPlaying && previewAudio) {
-			previewAudio.pause();
-			setIsPlaying(false);
-			return;
-		}
+	const renderRequiredLabel = (label: string, isRequired: boolean = true) => (
+		<div className="flex items-center gap-1">
+			<span>{label}</span>
+			{isRequired && <span className="text-red-500">*</span>}
+		</div>
+	);
 
-		const text = watch('script_template');
-		const voice = watch('ai_voice_id');
-		
-		try {
-			const response = await fetch('/api/voice-preview', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ text, voice })
-			});
-
-			if (!response.ok) throw new Error('Failed to generate preview');
-
-			const blob = await response.blob();
-			const audio = new Audio(URL.createObjectURL(blob));
-			setPreviewAudio(audio);
-			audio.play();
-			setIsPlaying(true);
-
-			audio.onended = () => {
-				setIsPlaying(false);
-			};
-		} catch (error) {
-			console.error('Error generating preview:', error);
-		}
+	const renderFieldError = (error?: { message?: string }) => {
+		if (!error?.message) return null;
+		return <p className="text-sm text-red-500 mt-1">{error.message}</p>;
 	};
 
 	const renderStepContent = () => {
@@ -180,63 +298,166 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 						<div className="space-y-6">
 							<div className="space-y-2">
-								<Input
-									label="Campaign Name"
-									error={errors.name?.message}
-									{...register('name')}
-									className="w-full"
+								<Controller
+									name="name"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-600 mb-1.5">
+												{renderRequiredLabel('Campaign Name')}
+											</label>
+											<input
+												{...field}
+												className={`w-full px-4 py-2.5 rounded-md border
+												text-gray-800 bg-white
+												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+												disabled:bg-gray-50 disabled:cursor-not-allowed
+												transition-all duration-200
+												${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+											/>
+											{errors.name && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.name.message}</p>
+											)}
+										</div>
+									)}
 								/>
 							</div>
 							<div className="space-y-2">
-								<label className="block text-sm font-medium text-gray-700">
-									Description
-								</label>
-								<Textarea
-									{...register('description')}
-									className="w-full min-h-[120px] px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-									placeholder="Enter campaign description..."
+								<Controller
+									name="description"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-700">
+												{renderRequiredLabel('Description', false)}
+											</label>
+											<textarea
+												{...field}
+												className="w-full min-h-[120px] px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+												placeholder="Enter campaign description..."
+											/>
+											{errors.description && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.description.message}</p>
+											)}
+										</div>
+									)}
 								/>
 							</div>
 							<div className="space-y-2">
-								<Select
-									label="Priority"
-									{...register('priority')}
-									className="w-full"
-								>
-									<option value="low">Low</option>
-									<option value="medium">Medium</option>
-									<option value="high">High</option>
-								</Select>
+								<Controller
+									name="priority"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-600 mb-1.5">
+												{renderRequiredLabel('Priority')}
+											</label>
+											<select
+												{...field}
+												className={`w-full px-4 py-2.5 rounded-md border
+												text-gray-800 bg-white
+												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+												disabled:bg-gray-50 disabled:cursor-not-allowed
+												transition-all duration-200
+												${errors.priority ? 'border-red-500' : 'border-gray-300'}`}
+											>
+												<option value="low">Low</option>
+												<option value="medium">Medium</option>
+												<option value="high">High</option>
+											</select>
+											{errors.priority && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.priority.message}</p>
+											)}
+										</div>
+									)}
+								/>
 							</div>
 						</div>
 						<div className="space-y-6">
 							<div className="space-y-2">
-								<Select
-									label="Campaign Type"
-									{...register('campaign_type')}
-									className="w-full"
-								>
-									<option value="outbound">Outbound</option>
-									<option value="inbound">Inbound</option>
-								</Select>
-							</div>
-							<div className="space-y-2">
-								<Input
-									type="number"
-									label="Budget"
-									{...register('budget')}
-									className="w-full"
-									placeholder="Enter campaign budget..."
+								<Controller
+									name="campaign_type"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-600 mb-1.5">
+												{renderRequiredLabel('Campaign Type')}
+											</label>
+											<select
+												{...field}
+												className={`w-full px-4 py-2.5 rounded-md border
+												text-gray-800 bg-white
+												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+												disabled:bg-gray-50 disabled:cursor-not-allowed
+												transition-all duration-200
+												${errors.campaign_type ? 'border-red-500' : 'border-gray-300'}`}
+											>
+												<option value="outbound">Outbound</option>
+												<option value="inbound">Inbound</option>
+											</select>
+											{errors.campaign_type && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.campaign_type.message}</p>
+											)}
+										</div>
+									)}
 								/>
 							</div>
 							<div className="space-y-2">
-								<Input
-									type="number"
-									label="Cost per Call"
-									step="0.01"
-									{...register('cost_per_call')}
-									className="w-full"
-									placeholder="Enter cost per call..."
+								<Controller
+									name="budget"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-600 mb-1.5">
+												{renderRequiredLabel('Budget')}
+											</label>
+											<input
+												{...field}
+												type="number"
+												className={`w-full px-4 py-2.5 rounded-md border
+												text-gray-800 bg-white
+												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+												disabled:bg-gray-50 disabled:cursor-not-allowed
+												transition-all duration-200
+												${errors.budget ? 'border-red-500' : 'border-gray-300'}`}
+												placeholder="Enter campaign budget..."
+												min="0"
+												step="0.01"
+											/>
+											{errors.budget && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.budget.message}</p>
+											)}
+										</div>
+									)}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Controller
+									name="cost_per_call"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-600 mb-1.5">
+												{renderRequiredLabel('Cost per Call')}
+											</label>
+											<input
+												{...field}
+												type="number"
+												className={`w-full px-4 py-2.5 rounded-md border
+												text-gray-800 bg-white
+												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+												disabled:bg-gray-50 disabled:cursor-not-allowed
+												transition-all duration-200
+												${errors.cost_per_call ? 'border-red-500' : 'border-gray-300'}`}
+												placeholder="Enter cost per call..."
+												min="0"
+												step="0.01"
+											/>
+											{errors.cost_per_call && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.cost_per_call.message}</p>
+											)}
+										</div>
+									)}
 								/>
 							</div>
 						</div>
@@ -248,51 +469,76 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
 					<div className="space-y-8">
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 							<div className="space-y-2">
-								<Select
-									label="Voice Language"
-									{...register('ai_voice_language')}
-									className="w-full"
-								>
-									<option value="en-US">English (US)</option>
-									<option value="en-GB">English (UK)</option>
-									<option value="es-ES">Spanish (Spain)</option>
-									<option value="fr-FR">French</option>
-									<option value="de-DE">German</option>
-								</Select>
+								<Controller
+									name="ai_voice_language"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-600 mb-1.5">
+												{renderRequiredLabel('Voice Language')}
+											</label>
+											<select
+												{...field}
+												className={`w-full px-4 py-2.5 rounded-md border
+												text-gray-800 bg-white
+												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+												disabled:bg-gray-50 disabled:cursor-not-allowed
+												transition-all duration-200
+												${errors.ai_voice_language ? 'border-red-500' : 'border-gray-300'}`}
+											>
+												<option value="">Select Language</option>
+												<option value="en-US">English (US)</option>
+												<option value="en-GB">English (UK)</option>
+												<option value="es-ES">Spanish (Spain)</option>
+												<option value="fr-FR">French</option>
+												<option value="de-DE">German</option>
+											</select>
+											{errors.ai_voice_language && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.ai_voice_language.message}</p>
+											)}
+										</div>
+									)}
+								/>
 							</div>
 							<div className="space-y-2">
-								<Select
-									label="Voice Gender"
-									{...register('ai_voice_gender')}
-									className="w-full"
-								>
-									<option value="male">Male</option>
-									<option value="female">Female</option>
-								</Select>
+								<Controller
+									name="ai_voice_gender"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-600 mb-1.5">
+												{renderRequiredLabel('Voice Gender')}
+											</label>
+											<select
+												{...field}
+												className={`w-full px-4 py-2.5 rounded-md border
+												text-gray-800 bg-white
+												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+												disabled:bg-gray-50 disabled:cursor-not-allowed
+												transition-all duration-200
+												${errors.ai_voice_gender ? 'border-red-500' : 'border-gray-300'}`}
+											>
+												<option value="">Select Gender</option>
+												<option value="male">Male</option>
+												<option value="female">Female</option>
+											</select>
+											{errors.ai_voice_gender && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.ai_voice_gender.message}</p>
+											)}
+										</div>
+									)}
+								/>
 							</div>
 						</div>
 						<div className="bg-gray-50 rounded-lg p-6">
-							<label className="block text-sm font-medium text-gray-700 mb-4">Voice Preview</label>
-							<div className="flex items-center space-x-6">
-								<Button
-									type="button"
-									onClick={handlePreviewVoice}
-									className="flex items-center space-x-2 px-6 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-								>
-									{isPlaying ? (
-										<>
-											<Volume className="w-5 h-5" />
-											<span>Pause Preview</span>
-										</>
-									) : (
-										<>
-											<Volume className="w-5 h-5" />
-											<span>Play Preview</span>
-										</>
-									)}
-								</Button>
-								<div className="text-sm text-gray-600">
-									Test how your script will sound with the selected voice
+							<div className="flex items-start">
+								<AlertCircle className="h-5 w-5 text-blue-400 mt-0.5" />
+								<div className="ml-3">
+									<h3 className="text-sm font-medium text-gray-900">Voice Configuration</h3>
+									<p className="mt-2 text-sm text-gray-600">
+										Select the language and gender for your AI voice. The selected voice will be used for all calls in this campaign.
+										Make sure to test your script with the selected voice configuration before launching the campaign.
+									</p>
 								</div>
 							</div>
 						</div>
@@ -309,8 +555,9 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
 							<Textarea
 								{...register('system_prompt')}
 								rows={3}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md"
+								className={`w-full px-3 py-2 border border-gray-300 rounded-md ${errors.system_prompt ? 'border-red-500' : ''}`}
 							/>
+							{renderFieldError(errors.system_prompt)}
 						</div>
 						<div className="space-y-2">
 							<label className="block text-sm font-medium text-gray-700">
@@ -319,9 +566,10 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
 							<Textarea
 								{...register('script_template')}
 								rows={5}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md"
+								className={`w-full px-3 py-2 border border-gray-300 rounded-md ${errors.script_template ? 'border-red-500' : ''}`}
 								placeholder="Use {variables} for dynamic content"
 							/>
+							{renderFieldError(errors.script_template)}
 						</div>
 						<div className="space-y-4">
 							<label className="block text-sm font-medium text-gray-700">
@@ -330,9 +578,10 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
 							<Textarea
 								{...register('fallback_script')}
 								rows={3}
-								className="w-full px-3 py-2 border border-gray-300 rounded-md"
+								className={`w-full px-3 py-2 border border-gray-300 rounded-md ${errors.fallback_script ? 'border-red-500' : ''}`}
 								placeholder="Script to use when the customer is not interested"
 							/>
+							{renderFieldError(errors.fallback_script)}
 						</div>
 					</div>
 				);
@@ -343,26 +592,69 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 							<Input
 								type="datetime-local"
-								label="Start Date"
+								label={renderRequiredLabel('Start Date')}
 								{...register('start_date')}
 							/>
+							{renderFieldError(errors.start_date)}
 							<Input
 								type="datetime-local"
-								label="End Date"
+								label={renderRequiredLabel('End Date')}
 								{...register('end_date')}
 							/>
+							{renderFieldError(errors.end_date)}
 						</div>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 							<Input
 								type="time"
-								label="Calling Hours Start"
+								label={renderRequiredLabel('Calling Hours Start')}
 								{...register('calling_hours_start')}
 							/>
+							{renderFieldError(errors.calling_hours_start)}
 							<Input
 								type="time"
-								label="Calling Hours End"
+								label={renderRequiredLabel('Calling Hours End')}
 								{...register('calling_hours_end')}
 							/>
+							{renderFieldError(errors.calling_hours_end)}
+						</div>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+							<Input
+								type="date"
+								label={renderRequiredLabel('Expected Completion Date')}
+								{...register('expected_completion_date')}
+							/>
+							{renderFieldError(errors.expected_completion_date)}
+							<div className="space-y-2">
+								<Controller
+									name="success_criteria"
+									control={control}
+									render={({ field }) => (
+										<div>
+											<label className="block text-sm font-medium text-gray-600 mb-1.5">
+												{renderRequiredLabel('Success Criteria')}
+											</label>
+											<select
+												{...field}
+												className={`w-full px-4 py-2.5 rounded-md border
+												text-gray-800 bg-white
+												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+												disabled:bg-gray-50 disabled:cursor-not-allowed
+												transition-all duration-200
+												${errors.success_criteria ? 'border-red-500' : 'border-gray-300'}`}
+											>
+												<option value="">Select Success Criteria</option>
+												<option value="call_completed">Call Completed</option>
+												<option value="positive_response">Positive Response</option>
+												<option value="appointment_scheduled">Appointment Scheduled</option>
+												<option value="sale_made">Sale Made</option>
+											</select>
+											{errors.success_criteria && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.success_criteria.message}</p>
+											)}
+										</div>
+									)}
+								/>
+							</div>
 						</div>
 						<div className="bg-gray-50 rounded-lg p-6 space-y-4">
 							<label className="block text-sm font-medium text-gray-700">Working Days</label>
@@ -390,19 +682,22 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 							<Input
 								type="number"
-								label="Calls Per Day"
+								label={renderRequiredLabel('Calls Per Day')}
 								{...register('calls_per_day')}
 							/>
+							{renderFieldError(errors.calls_per_day)}
 							<Input
 								type="number"
-								label="Max Attempts Per Lead"
+								label={renderRequiredLabel('Max Attempts Per Lead')}
 								{...register('max_attempts_per_lead')}
 							/>
+							{renderFieldError(errors.max_attempts_per_lead)}
 							<Input
 								type="number"
-								label="Retry Delay (minutes)"
+								label={renderRequiredLabel('Retry Delay (minutes)')}
 								{...register('retry_delay_minutes')}
 							/>
+							{renderFieldError(errors.retry_delay_minutes)}
 						</div>
 					</div>
 				);
@@ -536,6 +831,28 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ currentStep }) => {
 	return (
 		<form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
 			{renderStepContent()}
+			{Object.keys(errors).length > 0 && (
+				<div className="bg-red-50 border border-red-200 rounded-md p-4 mt-4">
+					<div className="flex items-center gap-2 text-red-700">
+						<AlertCircle className="w-5 h-5" />
+						<p className="text-sm font-medium">Please fix the following errors:</p>
+					</div>
+					<ul className="list-disc list-inside mt-2 text-sm text-red-600">
+						{Object.entries(errors).map(([field, error]) => (
+							<li key={field}>{error?.message || `Invalid ${field.replace(/_/g, ' ')}`}</li>
+						))}
+					</ul>
+				</div>
+			)}
+			<div className="flex justify-end">
+				<Button
+					type="submit"
+					disabled={isLoading || !isValid}
+					className={`px-6 py-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+				>
+					{isLoading ? 'Creating Campaign...' : 'Create Campaign'}
+				</Button>
+			</div>
 		</form>
 	);
-};
+});

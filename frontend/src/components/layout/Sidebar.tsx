@@ -181,7 +181,7 @@ export const Sidebar: React.FC = () => {
   const renderNavItem = (item: any, isNested = false) => {
     if (isGroup(item)) {
       return (
-        <div key={item.name} className="mb-2">
+        <div key={`group-${item.name}`} className="mb-2">
           <button
             onClick={() => toggleGroup(item.name)}
             className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-white/70 hover:text-white touch-manipulation"
@@ -198,9 +198,9 @@ export const Sidebar: React.FC = () => {
           </button>
           {expandedGroups.includes(item.name) && (
             <div className="ml-4 space-y-1">
-              {item.items.map(subItem => (
+              {item.items.map((subItem, index) => (
                 <NavLink
-                  key={subItem.name}
+                  key={`${item.name}-${subItem.name}-${index}`}
                   to={subItem.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={({ isActive }) =>
@@ -223,7 +223,7 @@ export const Sidebar: React.FC = () => {
 
     return (
       <NavLink
-        key={item.name}
+        key={`nav-${item.name}-${item.href}`}
         to={item.href}
         onClick={() => setIsMobileMenuOpen(false)}
         className={({ isActive }) =>
