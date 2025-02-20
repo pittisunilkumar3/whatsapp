@@ -29,10 +29,32 @@ router.get('/', async (req, res) => {
 // Get voice campaigns by company
 router.get('/company/:companyId', async (req, res) => {
     try {
-        const campaigns = await VoiceCampaign.findByCompany(req.params.companyId, req.query);
-        res.json(campaigns);
+        const companyId = parseInt(req.params.companyId);
+        if (isNaN(companyId)) {
+            return res.status(400).json({ message: 'Invalid company ID' });
+        }
+
+        // Extract query parameters
+        const filters = {
+            status: req.query.status,
+            priority: req.query.priority,
+            search: req.query.search,
+            start_date: req.query.start_date,
+            end_date: req.query.end_date,
+            sort: req.query.sort,
+            order: req.query.order,
+            page: parseInt(req.query.page) || 1,
+            limit: parseInt(req.query.limit) || 10
+        };
+
+        const result = await VoiceCampaign.findByCompany(companyId, filters);
+        res.json(result);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching company voice campaigns', error: error.message });
+        console.error('Error in get company campaigns:', error);
+        res.status(500).json({ 
+            message: 'Error fetching company voice campaigns', 
+            error: error.message 
+        });
     }
 });
 

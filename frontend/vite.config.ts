@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 export default defineConfig({
   define: {
@@ -14,6 +15,9 @@ export default defineConfig({
       babel: {
         plugins: ['@emotion/babel-plugin']
       }
+    }),
+    nodePolyfills({
+      include: ['crypto']
     })
   ],
   resolve: {
@@ -35,4 +39,3 @@ export default defineConfig({
     }
   }
 });
-

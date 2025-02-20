@@ -32,54 +32,161 @@ class VoiceCampaign {
 
     static async findById(id, companyId) {
         const query = `SELECT * FROM voice_campaigns WHERE id = ? AND company_id = ? AND is_active = TRUE`;
-        const [campaign] = await db.query(query, [id, companyId]);
+        const [campaigns] = await db.query(query, [id, companyId]);
         
-        if (campaign) {
-            // Parse JSON fields
-            if (campaign.working_days) {
-                campaign.working_days = JSON.parse(campaign.working_days);
+        if (!campaigns || campaigns.length === 0) {
+            return null;
+        }
+
+        const campaign = campaigns[0];
+        const processedCampaign = {};
+        
+        // Convert each field from Buffer if needed
+        for (const [key, value] of Object.entries(campaign)) {
+            if (Buffer.isBuffer(value)) {
+                processedCampaign[key] = value.toString('utf8');
+            } else {
+                processedCampaign[key] = value;
             }
-            if (campaign.team_members) {
-                campaign.team_members = JSON.parse(campaign.team_members);
-            }
-            if (campaign.tags) {
-                campaign.tags = JSON.parse(campaign.tags);
+        }
+
+        // Parse JSON fields
+        if (processedCampaign.working_days) {
+            try {
+                processedCampaign.working_days = JSON.parse(processedCampaign.working_days);
+            } catch (e) {
+                processedCampaign.working_days = [];
             }
         }
         
-        return campaign;
+        if (processedCampaign.team_members) {
+            try {
+                processedCampaign.team_members = JSON.parse(processedCampaign.team_members);
+            } catch (e) {
+                processedCampaign.team_members = [];
+            }
+        }
+        
+        if (processedCampaign.tags) {
+            try {
+                processedCampaign.tags = JSON.parse(processedCampaign.tags);
+            } catch (e) {
+                processedCampaign.tags = [];
+            }
+        }
+        
+        return processedCampaign;
     }
 
     static async findByCompany(companyId, filters = {}) {
-        let query = `SELECT * FROM voice_campaigns WHERE company_id = ? AND is_active = TRUE`;
-        const values = [companyId];
+        try {
+            // Validate company ID
+            if (!companyId || typeof companyId !== 'number') {
+                throw new Error('Invalid company ID');
+            }
 
-        if (filters.status) {
-            query += ` AND status = ?`;
-            values.push(filters.status);
+            let query = `SELECT 
+                vc.*,
+                COALESCE(
+                    (SELECT COUNT(*) FROM voice_leads vl WHERE vl.campaign_id = vc.id),
+                    0
+                ) as total_leads_count
+            FROM voice_campaigns vc
+            WHERE vc.company_id = ? AND vc.is_active = TRUE`;
+            
+            const values = [companyId];
+
+            // Add filters
+            if (filters.status) {
+                query += ` AND vc.status = ?`;
+                values.push(filters.status);
+            }
+
+            if (filters.priority) {
+                query += ` AND vc.priority = ?`;
+                values.push(filters.priority);
+            }
+
+            if (filters.search) {
+                query += ` AND (vc.name LIKE ? OR vc.description LIKE ?)`;
+                const searchTerm = `%${filters.search}%`;
+                values.push(searchTerm, searchTerm);
+            }
+
+            if (filters.start_date) {
+                query += ` AND vc.created_at >= ?`;
+                values.push(filters.start_date);
+            }
+
+            if (filters.end_date) {
+                query += ` AND vc.created_at <= ?`;
+                values.push(filters.end_date);
+            }
+
+            // Add sorting
+            const validSortFields = ['created_at', 'name', 'status', 'priority'];
+            const sortField = filters.sort && validSortFields.includes(filters.sort) ? filters.sort : 'created_at';
+            const sortOrder = filters.order && filters.order.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+            query += ` ORDER BY vc.${sortField} ${sortOrder}`;
+
+            // Add pagination
+            const page = parseInt(filters.page) || 1;
+            const limit = parseInt(filters.limit) || 10;
+            const offset = (page - 1) * limit;
+            query += ` LIMIT ? OFFSET ?`;
+            values.push(limit, offset);
+
+            // Get total count for pagination
+            const countQuery = `SELECT COUNT(*) as total FROM voice_campaigns WHERE company_id = ? AND is_active = TRUE`;
+            const [[{ total }], [campaigns]] = await Promise.all([
+                db.query(countQuery, [companyId]),
+                db.query(query, values)
+            ]);
+
+            // Process campaigns
+            const processedCampaigns = campaigns.map(campaign => {
+                const processedCampaign = {};
+                
+                // Convert Buffer to string and handle other fields
+                for (const [key, value] of Object.entries(campaign)) {
+                    if (Buffer.isBuffer(value)) {
+                        processedCampaign[key] = value.toString('utf8');
+                    } else if (key === 'created_at' || key === 'updated_at') {
+                        processedCampaign[key] = value ? new Date(value).toISOString() : null;
+                    } else {
+                        processedCampaign[key] = value;
+                    }
+                }
+
+                // Parse JSON fields
+                ['working_days', 'team_members', 'tags'].forEach(field => {
+                    if (processedCampaign[field]) {
+                        try {
+                            processedCampaign[field] = JSON.parse(processedCampaign[field]);
+                        } catch (e) {
+                            processedCampaign[field] = [];
+                        }
+                    }
+                });
+
+                return processedCampaign;
+            });
+
+            // Return with pagination info
+            return {
+                data: processedCampaigns,
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    total_pages: Math.ceil(total / limit)
+                }
+            };
+
+        } catch (error) {
+            console.error('Error in findByCompany:', error);
+            throw error;
         }
-
-        if (filters.priority) {
-            query += ` AND priority = ?`;
-            values.push(filters.priority);
-        }
-
-        query += ` ORDER BY created_at DESC`;
-        const campaigns = await db.query(query, values);
-        
-        // Parse JSON fields for each campaign
-        return campaigns.map(campaign => {
-            if (campaign.working_days) {
-                campaign.working_days = JSON.parse(campaign.working_days);
-            }
-            if (campaign.team_members) {
-                campaign.team_members = JSON.parse(campaign.team_members);
-            }
-            if (campaign.tags) {
-                campaign.tags = JSON.parse(campaign.tags);
-            }
-            return campaign;
-        });
     }
 
     static async findAll(filters = {}) {
@@ -107,20 +214,47 @@ class VoiceCampaign {
         }
 
         query += ` ORDER BY created_at DESC`;
-        const campaigns = await db.query(query, values);
+        const [campaigns] = await db.query(query, values);
         
-        // Parse JSON fields for each campaign
+        // Parse JSON fields and handle Buffer data for each campaign
         return campaigns.map(campaign => {
-            if (campaign.working_days) {
-                campaign.working_days = JSON.parse(campaign.working_days);
+            const processedCampaign = {};
+            
+            // Convert each field from Buffer if needed and parse JSON fields
+            for (const [key, value] of Object.entries(campaign)) {
+                if (Buffer.isBuffer(value)) {
+                    processedCampaign[key] = value.toString('utf8');
+                } else {
+                    processedCampaign[key] = value;
+                }
             }
-            if (campaign.team_members) {
-                campaign.team_members = JSON.parse(campaign.team_members);
+
+            // Parse JSON fields
+            if (processedCampaign.working_days) {
+                try {
+                    processedCampaign.working_days = JSON.parse(processedCampaign.working_days);
+                } catch (e) {
+                    processedCampaign.working_days = [];
+                }
             }
-            if (campaign.tags) {
-                campaign.tags = JSON.parse(campaign.tags);
+            
+            if (processedCampaign.team_members) {
+                try {
+                    processedCampaign.team_members = JSON.parse(processedCampaign.team_members);
+                } catch (e) {
+                    processedCampaign.team_members = [];
+                }
             }
-            return campaign;
+            
+            if (processedCampaign.tags) {
+                try {
+                    processedCampaign.tags = JSON.parse(processedCampaign.tags);
+                } catch (e) {
+                    processedCampaign.tags = [];
+                }
+            }
+
+            return processedCampaign;
         });
     }
 

@@ -68,16 +68,32 @@ interface VoiceApiResponse {
 }
 
 interface Campaign {
-    id: string;
+    id: number;
     name: string;
-    status: 'active' | 'paused' | 'completed';
-    leads: number;
-    completed: number;
-    successRate: number;
-    lastRun: string;
-    reachRate: number;
-    duration: string;
-    totalCalls: number;
+    description: string;
+    status: 'draft' | 'active' | 'paused' | 'completed';
+    priority: 'low' | 'medium' | 'high';
+    campaign_type: string;
+    calls_per_day: number;
+    total_leads: number;
+    completed_calls: number;
+    successful_calls: number;
+    failed_calls: number;
+    budget: string;
+    cost_per_call: string;
+    created_at: string;
+    start_date: string;
+    end_date: string;
+    total_leads_count: number;
+}
+
+interface CampaignsApiResponse {
+    data: Campaign[];
+    pagination: {
+        page: number;
+        limit: number;
+        total_pages: number | null;
+    };
 }
 
 interface VoiceAgent {
@@ -155,6 +171,10 @@ export const Voice: React.FC = () => {
     const user = useAuthStore(state => state.user);
     const companyId = user?.company?.id;
 
+    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+    const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
+    const [campaignError, setCampaignError] = useState<string | null>(null);
+
     useEffect(() => {
         const fetchVoices = async () => {
             if (!companyId) return;
@@ -188,32 +208,38 @@ export const Voice: React.FC = () => {
         fetchVoices();
     }, [companyId]);
 
-    const [campaigns] = useState<Campaign[]>([
-        {
-            id: '1',
-            name: 'Sales Follow-up Q1',
-            status: 'active',
-            leads: 1500,
-            completed: 750,
-            successRate: 68,
-            lastRun: '2025-02-10 08:30 AM',
-            reachRate: 85,
-            duration: '2m 30s',
-            totalCalls: 750
-        },
-        {
-            id: '2',
-            name: 'Customer Feedback',
-            status: 'paused',
-            leads: 800,
-            completed: 200,
-            successRate: 75,
-            lastRun: '2025-02-09 03:45 PM',
-            reachRate: 70,
-            duration: '1m 45s',
-            totalCalls: 200
-        }
-    ]);
+    useEffect(() => {
+        const fetchCampaigns = async () => {
+            if (!companyId) return;
+            
+            setIsLoadingCampaigns(true);
+            setCampaignError(null);
+            
+            try {
+                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/voice-campaigns/company/${companyId}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add any auth headers if needed
+                        // 'Authorization': `Bearer ${token}`,
+                    },
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error fetching campaigns: ${response.statusText}`);
+                }
+                
+                const data: CampaignsApiResponse = await response.json();
+                setCampaigns(data.data);
+            } catch (error) {
+                console.error('Error fetching campaigns:', error);
+                setCampaignError(error instanceof Error ? error.message : 'Failed to fetch campaigns');
+            } finally {
+                setIsLoadingCampaigns(false);
+            }
+        };
+
+        fetchCampaigns();
+    }, [companyId]);
 
     const [voiceAgents] = useState<VoiceAgent[]>([
         {
@@ -374,7 +400,8 @@ export const Voice: React.FC = () => {
                             { label: 'All', value: 'all' },
                             { label: 'Active', value: 'active' },
                             { label: 'Paused', value: 'paused' },
-                            { label: 'Completed', value: 'completed' }
+                            { label: 'Completed', value: 'completed' },
+                            { label: 'Draft', value: 'draft' }
                         ]}
                         className="w-full sm:w-40"
                     />
@@ -388,15 +415,86 @@ export const Voice: React.FC = () => {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-                {campaigns.map((campaign) => (
-                    <VoiceCampaignCard
-                        key={campaign.id}
-                        campaign={campaign}
-                        onViewDetails={handleViewDetails}
-                    />
-                ))}
-            </div>
+            {isLoadingCampaigns ? (
+                <div className="flex justify-center items-center h-32">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+            ) : campaignError ? (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                    <p>{campaignError}</p>
+                </div>
+            ) : campaigns.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <h3 className="text-lg font-medium text-gray-900">No campaigns found</h3>
+                    <p className="mt-2 text-sm text-gray-500">Get started by creating your first campaign</p>
+                    <Button
+                        onClick={handleNewCampaign}
+                        className="mt-4 bg-primary text-white"
+                    >
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Create Campaign
+                    </Button>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-4">
+                    {campaigns.map((campaign) => (
+                        <Card key={campaign.id} className="p-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div>
+                                    <h3 className="text-lg font-semibold">{campaign.name}</h3>
+                                    <p className="text-sm text-gray-500 mt-1">{campaign.description || 'No description'}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        ${campaign.status === 'active' ? 'bg-green-100 text-green-800' :
+                                        campaign.status === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                                        campaign.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-gray-100 text-gray-800'}`}>
+                                        {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                                    </span>
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        ${campaign.priority === 'high' ? 'bg-red-100 text-red-800' :
+                                        campaign.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-green-100 text-green-800'}`}>
+                                        {campaign.priority.charAt(0).toUpperCase() + campaign.priority.slice(1)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">Total Leads</p>
+                                    <p className="text-lg font-semibold">{campaign.total_leads_count}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Completed Calls</p>
+                                    <p className="text-lg font-semibold">{campaign.completed_calls}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Success Rate</p>
+                                    <p className="text-lg font-semibold">
+                                        {campaign.completed_calls > 0
+                                            ? `${((campaign.successful_calls / campaign.completed_calls) * 100).toFixed(1)}%`
+                                            : '0%'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Budget</p>
+                                    <p className="text-lg font-semibold">${parseFloat(campaign.budget).toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <div className="flex justify-end mt-4">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => handleViewDetails(campaign.id.toString())}
+                                    className="text-primary"
+                                >
+                                    View Details
+                                </Button>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            )}
         </div>
     );
 
