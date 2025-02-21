@@ -6,6 +6,8 @@ import { StatusPill } from '../../components/ui/StatusPill';
 import { DataTable } from '../../components/ui/DataTable';
 import { Modal } from '../../components/ui/Modal';
 import { Dropdown } from '../../components/ui/Dropdown';
+import { useAuthStore } from '../../store/authStore';
+
 import { Users, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Switch } from '../../components/ui/Switch';
@@ -92,9 +94,11 @@ export const Employees: React.FC = () => {
 	const [employees, setEmployees] = useState<Employee[]>([]);
 
 	useEffect(() => {
+		const user = useAuthStore(state => state.user);
+    	const companyId = user?.company?.id;
 		const fetchEmployees = async () => {
 			try {
-				const response = await fetch('http://localhost:5000/api/company-employees/company/1');
+				const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/company-employees/company/${companyId}`);
 				const data = await response.json();
 				setEmployees(data.data);
 			} catch (error) {

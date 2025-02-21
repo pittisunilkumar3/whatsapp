@@ -60,7 +60,7 @@ export const Companies: React.FC = () => {
         const fetchCompanies = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch('http://localhost:5000/api/companies/with-employee-counts', {
+                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/companies/with-employee-counts`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json'

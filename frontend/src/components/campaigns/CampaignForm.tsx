@@ -56,7 +56,10 @@ type CampaignFormData = {
 type Employee = {
 	id: number;
 	name: string;
-	role?: string;
+	email: string;
+	employee_id: string;
+	department: number;
+	designation: number;
 };
 
 const campaignSchema = z.object({
@@ -114,12 +117,7 @@ interface CampaignFormProps {
 
 const STORAGE_KEY = 'campaign_form_data';
 
-const MOCK_EMPLOYEES: Employee[] = [
-	{ id: 1, name: "John Doe", role: "Sales Manager" },
-	{ id: 2, name: "Jane Smith", role: "Sales Representative" },
-	{ id: 3, name: "Mike Johnson", role: "Account Executive" },
-	// Add more mock employees as needed
-];
+const employees: Employee[] = [];
 
 export const CampaignForm = forwardRef<{
 	submitForm: () => Promise<void>;
@@ -130,6 +128,32 @@ export const CampaignForm = forwardRef<{
 	const navigate = useNavigate();
 	const [isLoading, setIsLoading] = useState(false);
 	const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+	const [employees, setEmployees] = useState<Employee[]>([]);
+
+	useEffect(() => {
+		const fetchEmployees = async () => {
+			try {
+				const companyId = 1; // Replace with actual company ID from your context/state
+				const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/company-employees/company/${companyId}`);
+				const result = await response.json();
+				if (result.data) {
+					setEmployees(result.data.map((emp: any) => ({
+						id: emp.id,
+						name: `${emp.name} ${emp.surname}`,
+						email: emp.email,
+						employee_id: emp.employee_id,
+						department: emp.department,
+						designation: emp.designation
+					})));
+				}
+			} catch (error) {
+				console.error('Error fetching employees:', error);
+				toast.error('Failed to load employees');
+			}
+		};
+
+		fetchEmployees();
+	}, []);
 
 	// Initialize form with stored data if available
 	const storedData = localStorage.getItem(STORAGE_KEY);
@@ -397,20 +421,20 @@ export const CampaignForm = forwardRef<{
 												}}
 											>
 												<option value="">Select team member</option>
-												{MOCK_EMPLOYEES.map((employee) => (
+												{employees.map((employee) => (
 													<option 
 														key={employee.id} 
 														value={employee.id}
 														disabled={field.value.includes(employee.id)}
 													>
-														{employee.name} - {employee.role}
+														{employee.name} - {employee.email}
 													</option>
 												))}
 											</select>
 											
 											<div className="mt-2 space-y-2">
 												{field.value.map((memberId: number) => {
-													const employee = MOCK_EMPLOYEES.find(e => e.id === memberId);
+													const employee = employees.find(e => e.id === memberId);
 													if (!employee) return null;
 													
 													return (
@@ -419,7 +443,7 @@ export const CampaignForm = forwardRef<{
 															className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
 														>
 															<span className="text-sm text-gray-700">
-																{employee.name} - {employee.role}
+																{employee.name} - {employee.email}
 															</span>
 															<button
 																type="button"

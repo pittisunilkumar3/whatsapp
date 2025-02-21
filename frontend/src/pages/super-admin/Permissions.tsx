@@ -13,6 +13,7 @@ interface Permission {
 	canDelete: boolean;
 }
 
+
 interface Submenu {
 	id: number;
 	menuName: string;
@@ -23,6 +24,7 @@ interface Submenu {
 	isActive: boolean;
 	permissions: Permission;
 }
+
 
 interface MenuModule {
 	id: number;
@@ -55,7 +57,7 @@ export const Permissions: React.FC = () => {
 	useEffect(() => {
 		const fetchPermissions = async () => {
 			try {
-				const response = await fetch(`http://localhost:5000/api/testsuperadmin/sidebar-menu-permissions/${id}`);
+				const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/testsuperadmin/sidebar-menu-permissions/${id}`);
 				const data = await response.json();
 				setPermissions(data);
 			} catch (error) {
@@ -76,7 +78,7 @@ export const Permissions: React.FC = () => {
 	const handleSave = async () => {
 		setIsSaving(true);
 		try {
-			const response = await fetch(`http://localhost:5000/api/testsuperadmin/sidebar-menu-permissions/${id}`, {
+			const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/testsuperadmin/sidebar-menu-permissions/${id}`, {
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',

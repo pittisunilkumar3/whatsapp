@@ -284,6 +284,7 @@ export const Sidebar: React.FC = () => {
           aria-hidden="true"
         />
       )}
+      
     </>
   );
 };
