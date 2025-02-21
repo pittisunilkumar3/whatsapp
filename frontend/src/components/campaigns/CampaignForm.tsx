@@ -926,27 +926,10 @@ export const CampaignForm = forwardRef<{
 		<form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
 			{renderStepContent()}
 			{Object.keys(errors).length > 0 && (
-				<div className="bg-red-50 border border-red-200 rounded-md p-4 mt-4">
-					<div className="flex items-center gap-2 text-red-700">
-						<AlertCircle className="w-5 h-5" />
-						<p className="text-sm font-medium">Please fix the following errors:</p>
-					</div>
-					<ul className="list-disc list-inside mt-2 text-sm text-red-600">
-						{Object.entries(errors).map(([field, error]) => (
-							<li key={field}>{error?.message || `Invalid ${field.replace(/_/g, ' ')}`}</li>
-						))}
-					</ul>
+				<div className="text-red-500 mt-4">
+					Please fix the errors above before proceeding.
 				</div>
 			)}
-			<div className="flex justify-end">
-				<Button
-					type="submit"
-					disabled={isLoading || !isValid}
-					className={`px-6 py-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-				>
-					{isLoading ? 'Creating Campaign...' : 'Create Campaign'}
-				</Button>
-			</div>
 		</form>
 	);
 });

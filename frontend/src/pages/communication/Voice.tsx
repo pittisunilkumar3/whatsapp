@@ -380,7 +380,7 @@ export const Voice: React.FC = () => {
     };
 
     const handleViewDetails = (id: string) => {
-        navigate(`/company-admin/communication/voice/${id}`);
+        navigate(`/company-admin/communication/voice/campaigns/${id}`);
     };
 
     const renderCampaigns = () => (
@@ -438,7 +438,11 @@ export const Voice: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {campaigns.map((campaign) => (
-                        <Card key={campaign.id} className="p-6">
+                        <Card 
+                            key={campaign.id} 
+                            className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                            onClick={() => handleViewDetails(campaign.id.toString())}
+                        >
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div>
                                     <h3 className="text-lg font-semibold">{campaign.name}</h3>
@@ -883,8 +887,7 @@ export const Voice: React.FC = () => {
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                 call.sentiment === 'Positive' ? 'bg-green-100 text-green-800' :
                                                 call.sentiment === 'Negative' ? 'bg-red-100 text-red-800' :
-                                                'bg-gray-100 text-gray-800'
-                                            }`}>
+                                                'bg-gray-100 text-gray-800'}`}>
                                                 {call.sentiment}
                                             </span>
                                         </td>

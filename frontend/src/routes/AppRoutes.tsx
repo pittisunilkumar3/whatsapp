@@ -152,7 +152,7 @@ export const AppRoutes: React.FC = () => {
                 <Route path="communication" element={<CommunicationHub />} />
                 <Route path="communication/voice" element={<Voice />} />
                 <Route path="communication/voice/new-campaign" element={<NewCampaign />} />
-                <Route path="communication/voice/:id" element={<VoiceCampaignDetails />} />
+                <Route path="communication/voice/campaigns/:id" element={<VoiceCampaignDetails />} />
                 <Route path="communication/whatsapp" element={<WhatsApp />} />
                 <Route path="communication/sms" element={<SMS />} />
                 <Route path="communication/email" element={<Email />} />
