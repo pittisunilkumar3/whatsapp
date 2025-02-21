@@ -7,14 +7,29 @@ class VoiceCampaign {
         // Create a copy of the data to avoid modifying the original
         const formattedData = { ...campaignData };
         
-        // Remove owner_id if present (since it's optional)
+        // Validate owner_id exists in company_employee table if provided
         if (formattedData.owner_id) {
-            delete formattedData.owner_id;
-        }
+            try {
+                const [owners] = await db.query(
+                    'SELECT id, company_id FROM company_employee WHERE id = ?',
+                    [formattedData.owner_id]
+                );
+                
+                if (!owners || owners.length === 0) {
+                    throw new Error(`Owner with ID ${formattedData.owner_id} not found in company_employee table`);
+                }
 
-        // Remove team_members if present (since it's optional)
-        if (formattedData.team_members) {
-            delete formattedData.team_members;
+                const owner = owners[0];
+                if (owner.company_id !== formattedData.company_id) {
+                    throw new Error(`Owner with ID ${formattedData.owner_id} belongs to company ${owner.company_id}, not ${formattedData.company_id}`);
+                }
+            } catch (error) {
+                console.error('Error validating owner:', error);
+                throw new Error(`Invalid owner_id: ${error.message}`);
+            }
+        } else {
+            // If owner_id is not provided, set it to null explicitly
+            formattedData.owner_id = null;
         }
         
         // Format JSON fields
@@ -22,12 +37,78 @@ class VoiceCampaign {
             formattedData.working_days = JSON.stringify(formattedData.working_days);
         }
         
+        if (Array.isArray(formattedData.team_members)) {
+            // Validate team members exist in company_employee table
+            if (formattedData.team_members.length > 0) {
+                try {
+                    const [teamMembers] = await db.query(
+                        'SELECT id, company_id FROM company_employee WHERE id IN (?)',
+                        [formattedData.team_members]
+                    );
+                    
+                    if (!teamMembers || teamMembers.length !== formattedData.team_members.length) {
+                        const foundIds = teamMembers.map(member => member.id);
+                        const invalidIds = formattedData.team_members.filter(id => !foundIds.includes(id));
+                        throw new Error(`Team members with IDs ${invalidIds.join(', ')} not found`);
+                    }
+
+                    // Verify all team members belong to the same company
+                    const invalidMembers = teamMembers.filter(member => member.company_id !== formattedData.company_id);
+                    if (invalidMembers.length > 0) {
+                        throw new Error(`Team members with IDs ${invalidMembers.map(m => m.id).join(', ')} do not belong to company ${formattedData.company_id}`);
+                    }
+                } catch (error) {
+                    console.error('Error validating team members:', error);
+                    throw new Error(`Invalid team_members: ${error.message}`);
+                }
+            }
+            formattedData.team_members = JSON.stringify(formattedData.team_members);
+        } else {
+            // If team_members is not provided, set it to empty array
+            formattedData.team_members = JSON.stringify([]);
+        }
+        
         if (Array.isArray(formattedData.tags)) {
             formattedData.tags = JSON.stringify(formattedData.tags);
         }
         
         const query = `INSERT INTO voice_campaigns SET ?`;
-        return db.query(query, [formattedData]);
+        const [result] = await db.query(query, [formattedData]);
+        
+        // Fetch the newly created campaign
+        const [newCampaign] = await db.query(
+            'SELECT * FROM voice_campaigns WHERE id = ?',
+            [result.insertId]
+        );
+
+        if (!newCampaign || newCampaign.length === 0) {
+            throw new Error('Failed to fetch created campaign');
+        }
+
+        // Process the campaign data
+        const processedCampaign = {};
+        for (const [key, value] of Object.entries(newCampaign[0])) {
+            if (Buffer.isBuffer(value)) {
+                processedCampaign[key] = value.toString('utf8');
+            } else if (key === 'created_at' || key === 'updated_at') {
+                processedCampaign[key] = value ? new Date(value).toISOString() : null;
+            } else {
+                processedCampaign[key] = value;
+            }
+        }
+
+        // Parse JSON fields
+        ['working_days', 'team_members', 'tags'].forEach(field => {
+            if (processedCampaign[field]) {
+                try {
+                    processedCampaign[field] = JSON.parse(processedCampaign[field]);
+                } catch (e) {
+                    processedCampaign[field] = [];
+                }
+            }
+        });
+
+        return { insertId: result.insertId, campaign: processedCampaign };
     }
 
     static async findById(id, companyId) {
@@ -216,7 +297,7 @@ class VoiceCampaign {
         query += ` ORDER BY created_at DESC`;
         const [campaigns] = await db.query(query, values);
         
-        // Parse JSON fields and handle Buffer data for each campaign
+        // Process and return campaigns with proper JSON parsing
         return campaigns.map(campaign => {
             const processedCampaign = {};
             
@@ -224,35 +305,23 @@ class VoiceCampaign {
             for (const [key, value] of Object.entries(campaign)) {
                 if (Buffer.isBuffer(value)) {
                     processedCampaign[key] = value.toString('utf8');
+                } else if (key === 'created_at' || key === 'updated_at') {
+                    processedCampaign[key] = value ? new Date(value).toISOString() : null;
                 } else {
                     processedCampaign[key] = value;
                 }
             }
 
             // Parse JSON fields
-            if (processedCampaign.working_days) {
-                try {
-                    processedCampaign.working_days = JSON.parse(processedCampaign.working_days);
-                } catch (e) {
-                    processedCampaign.working_days = [];
+            ['working_days', 'team_members', 'tags'].forEach(field => {
+                if (processedCampaign[field]) {
+                    try {
+                        processedCampaign[field] = JSON.parse(processedCampaign[field]);
+                    } catch (e) {
+                        processedCampaign[field] = [];
+                    }
                 }
-            }
-            
-            if (processedCampaign.team_members) {
-                try {
-                    processedCampaign.team_members = JSON.parse(processedCampaign.team_members);
-                } catch (e) {
-                    processedCampaign.team_members = [];
-                }
-            }
-            
-            if (processedCampaign.tags) {
-                try {
-                    processedCampaign.tags = JSON.parse(processedCampaign.tags);
-                } catch (e) {
-                    processedCampaign.tags = [];
-                }
-            }
+            });
 
             return processedCampaign;
         });
@@ -351,7 +420,21 @@ class VoiceCampaign {
             }
         }
 
-        // Remove validation for team_members and owner_id since they're optional
+        // Validate owner_id if provided
+        if (data.owner_id && typeof data.owner_id !== 'number') {
+            throw new Error('owner_id must be a number');
+        }
+
+        // Validate team_members if provided
+        if (data.team_members) {
+            if (!Array.isArray(data.team_members)) {
+                throw new Error('team_members must be an array');
+            }
+            
+            if (data.team_members.some(id => typeof id !== 'number')) {
+                throw new Error('All team member IDs must be numbers');
+            }
+        }
         
         // Validate tags if provided
         if (data.tags && !Array.isArray(data.tags)) {

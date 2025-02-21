@@ -1251,6 +1251,211 @@ Headers will be set appropriately:
 - For CSV: `Content-Type: text/csv`
 - For XLSX: `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
 
+### 20. Import Company Leads from JSON
+```http
+POST /api/company/voice-leads/company/{companyId}/import-json
+Content-Type: application/json
+```
+
+#### Request Body Schema
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| campaign_id | integer | Yes | ID of the campaign to associate leads with |
+| leads | array | Yes | Array of lead objects |
+| default_values | object | No | Default values to apply to all imported leads |
+
+#### Lead Object Schema
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| phone | string | Yes | Phone number (will be formatted to E.164) |
+| first_name | string | No | Lead's first name |
+| last_name | string | No | Lead's last name |
+| email | string | No | Email address |
+| company_name | string | No | Company name |
+| job_title | string | No | Job title |
+| industry | string | No | Industry sector |
+| priority | integer | No | Lead priority (1-5) |
+| best_time_to_call | string | No | Preferred call time (HH:MM:SS) |
+| timezone | string | No | Lead's timezone |
+| preferred_language | string | No | Preferred language (default: 'en-US') |
+| country | string | No | Country |
+| state | string | No | State/Province |
+| city | string | No | City |
+| address | string | No | Street address |
+| postal_code | string | No | Postal/ZIP code |
+| source | string | No | Lead source |
+| source_details | string | No | Additional source information |
+| annual_revenue | number | No | Company's annual revenue |
+| company_size | string | No | Company size range |
+| lead_score | integer | No | Lead scoring (0-100) |
+| interest_level | string | No | Interest level: 'low', 'medium', 'high' |
+| notes | string | No | Additional notes |
+| tags | array | No | Array of tags |
+
+#### Example Request Body
+```json
+{
+    "campaign_id": 123,
+    "leads": [
+        {
+            "first_name": "John",
+            "last_name": "Doe",
+            "phone": "+1234567890",
+            "email": "john@example.com",
+            "company_name": "ABC Corp",
+            "job_title": "Manager",
+            "industry": "Technology",
+            "priority": 1,
+            "lead_score": 85,
+            "interest_level": "high",
+            "tags": ["enterprise", "high-value"]
+        },
+        {
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "phone": "1234567890",
+            "email": "jane@example.com",
+            "company_name": "XYZ Inc",
+            "job_title": "Director",
+            "industry": "Healthcare",
+            "priority": 2,
+            "lead_score": 75,
+            "interest_level": "medium",
+            "tags": ["healthcare", "mid-market"]
+        }
+    ],
+    "default_values": {
+        "status": "pending",
+        "source": "api_import",
+        "timezone": "UTC"
+    }
+}
+```
+
+#### Example Request using curl
+```bash
+curl -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "campaign_id": 123,
+    "leads": [
+      {
+        "first_name": "John",
+        "last_name": "Doe",
+        "phone": "+1234567890",
+        "email": "john@example.com"
+      }
+    ],
+    "default_values": {
+      "status": "pending",
+      "source": "api_import"
+    }
+  }' \
+  https://api.example.com/api/company/voice-leads/company/456/import-json
+```
+
+#### Success Response (201 Created)
+```json
+{
+    "message": "Leads imported successfully",
+    "imported_count": 2,
+    "leads": [
+        {
+            "id": 1,
+            "first_name": "John",
+            "last_name": "Doe",
+            "phone": "+1234567890",
+            "email": "john@example.com",
+            "company_name": "ABC Corp",
+            "job_title": "Manager",
+            "status": "pending",
+            "source": "api_import",
+            "campaign_id": 123,
+            "company_id": 456,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z"
+        },
+        {
+            "id": 2,
+            "first_name": "Jane",
+            "last_name": "Smith",
+            "phone": "+11234567890",
+            "email": "jane@example.com",
+            "company_name": "XYZ Inc",
+            "job_title": "Director",
+            "status": "pending",
+            "source": "api_import",
+            "campaign_id": 123,
+            "company_id": 456,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z"
+        }
+    ]
+}
+```
+
+#### Error Responses
+
+##### 400 Bad Request
+```json
+{
+    "message": "Error importing leads",
+    "error": "Detailed error message"
+}
+```
+
+Possible error messages:
+- "campaign_id is required"
+- "leads must be a non-empty array"
+- "Invalid phone number format: {phone}"
+- "Missing required fields: phone"
+- "Invalid email format"
+- "Lead score must be between 0 and 100"
+- "Invalid status value"
+- "Invalid interest level"
+- "Invalid campaign_id or campaign does not belong to company"
+
+##### 500 Internal Server Error
+```json
+{
+    "message": "Error importing leads",
+    "error": "Internal server error message"
+}
+```
+
+#### Notes
+1. All leads are validated before import
+2. The import process uses a database transaction to ensure data consistency
+3. If any lead fails validation, the entire import will be rolled back
+4. Default values can be used to set common fields for all imported leads
+5. Phone numbers are automatically formatted to E.164 format
+6. The import process is atomic - either all leads are imported or none
+7. Maximum request size is determined by your server configuration
+8. All text fields are automatically trimmed
+9. Timezone defaults to UTC if not specified
+10. The API supports bulk imports of up to 1000 leads per request
+
+### 21. Export Company Leads
+```http
+GET /api/company/voice-leads/company/{companyId}/export
+```
+
+#### Query Parameters
+- `format`: Export format ('csv' or 'xlsx', default: 'csv')
+- `campaign_ids`: Comma-separated list of campaign IDs to filter
+- `status`: Filter by lead status
+- `start_date`: Filter leads created after this date (YYYY-MM-DD)
+- `end_date`: Filter leads created before this date (YYYY-MM-DD)
+
+#### Response
+- For CSV format: Returns a CSV file with lead data
+- For XLSX format: Returns an Excel file with lead data
+
+Headers will be set appropriately:
+- For CSV: `Content-Type: text/csv`
+- For XLSX: `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+
 ## Error Responses
 
 ### 400 Bad Request

@@ -19,6 +19,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'react-hot-toast';
+import Papa from 'papaparse';
 
 type CampaignFormData = {
 	name: string;
@@ -234,9 +235,9 @@ export const CampaignForm = forwardRef<{
 				expected_completion_date: data.expected_completion_date,
 				budget: Number(data.budget),
 				cost_per_call: Number(data.cost_per_call),
-				owner_id: data.owner_id,
-				team_members: data.team_members,
-				tags: data.tags,
+				owner_id: Number(data.owner_id),
+				team_members: [], // Always send empty array
+				tags: data.tags || [],
 				notes: data.notes || '',
 				start_date: `${data.start_date} 09:00:00`,
 				end_date: `${data.end_date} 17:00:00`,
@@ -299,7 +300,43 @@ export const CampaignForm = forwardRef<{
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
 		if (file) {
-			setUploadedFile(file);
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				const content = e.target?.result as string;
+				Papa.parse(content, {
+					header: true,
+					complete: (results: { data: any[] }) => {
+						// Transform CSV data to the required format
+						const transformedData = {
+							campaign_id: Math.floor(Math.random() * 1000), // Generate random campaign ID
+							leads: results.data.map(row => ({
+								first_name: row['First Name'] || row['first_name'] || '',
+								last_name: row['Last Name'] || row['last_name'] || '',
+								phone: row['Phone'] || row['phone'] || '',
+								email: row['Email'] || row['email'] || '',
+								company_name: row['Company'] || row['company_name'] || '',
+								job_title: row['Job Title'] || row['job_title'] || '',
+								industry: row['Industry'] || row['industry'] || '',
+								priority: row['Priority'] ? Number(row['Priority']) : 1,
+								lead_score: row['Lead Score'] ? Number(row['Lead Score']) : 50,
+								interest_level: row['Interest Level'] || row['interest_level'] || 'medium',
+								tags: row['Tags'] ? row['Tags'].split(',').map((tag: string) => tag.trim()) : []
+							})),
+							default_values: {
+								status: 'pending',
+								source: 'api_import',
+								timezone: 'UTC'
+							}
+						};
+
+						console.log(JSON.stringify(transformedData, null, 2));
+					},
+					error: (error: any) => {
+						console.error('Error parsing CSV:', error);
+					}
+				});
+			};
+			reader.readAsText(file);
 		}
 	};
 
@@ -398,69 +435,37 @@ export const CampaignForm = forwardRef<{
 							</div>
 							<div className="space-y-2">
 								<Controller
-									name="team_members"
+									name="owner_id"
 									control={control}
 									render={({ field }) => (
 										<div>
 											<label className="block text-sm font-medium text-gray-600 mb-1.5">
-												{renderRequiredLabel('Team Members', false)}
+												{renderRequiredLabel('Campaign Owner')}
 											</label>
 											<select
+												{...field}
 												className={`w-full px-4 py-2.5 rounded-md border
 												text-gray-800 bg-white
 												focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
 												disabled:bg-gray-50 disabled:cursor-not-allowed
 												transition-all duration-200
-												${errors.team_members ? 'border-red-500' : 'border-gray-300'}`}
-												value=""
+												${errors.owner_id ? 'border-red-500' : 'border-gray-300'}`}
 												onChange={(e) => {
-													const selectedId = parseInt(e.target.value);
-													if (selectedId && !field.value.includes(selectedId)) {
-														field.onChange([...field.value, selectedId]);
-													}
+													field.onChange(parseInt(e.target.value));
 												}}
 											>
-												<option value="">Select team member</option>
+												<option value="">Select campaign owner</option>
 												{employees.map((employee) => (
 													<option 
 														key={employee.id} 
 														value={employee.id}
-														disabled={field.value.includes(employee.id)}
 													>
 														{employee.name} - {employee.email}
 													</option>
 												))}
 											</select>
-											
-											<div className="mt-2 space-y-2">
-												{field.value.map((memberId: number) => {
-													const employee = employees.find(e => e.id === memberId);
-													if (!employee) return null;
-													
-													return (
-														<div 
-															key={memberId}
-															className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
-														>
-															<span className="text-sm text-gray-700">
-																{employee.name} - {employee.email}
-															</span>
-															<button
-																type="button"
-																className="text-red-500 hover:text-red-700"
-																onClick={() => {
-																	field.onChange(field.value.filter((id: number) => id !== memberId));
-																}}
-															>
-																Remove
-															</button>
-														</div>
-													);
-												})}
-											</div>
-											
-											{errors.team_members && (
-												<p className="mt-1.5 text-sm text-red-500">{errors.team_members.message}</p>
+											{errors.owner_id && (
+												<p className="mt-1.5 text-sm text-red-500">{errors.owner_id.message}</p>
 											)}
 										</div>
 									)}

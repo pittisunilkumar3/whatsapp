@@ -6,10 +6,10 @@ const VoiceCampaign = require('../models/VoiceCampaign');
 router.post('/', async (req, res) => {
     try {
         await VoiceCampaign.validateCampaignData(req.body);
-        const result = await VoiceCampaign.create(req.body);
+        const { insertId, campaign } = await VoiceCampaign.create(req.body);
         res.status(201).json({ 
             message: 'Voice campaign created successfully', 
-            data: { id: result.insertId, ...req.body }
+            data: campaign
         });
     } catch (error) {
         res.status(400).json({ message: 'Error creating voice campaign', error: error.message });

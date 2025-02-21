@@ -261,6 +261,45 @@ router.post('/company/:companyId/import', upload.single('file'), async (req, res
     }
 });
 
+// Import leads for company using JSON
+router.post('/company/:companyId/import-json', async (req, res) => {
+    try {
+        const { campaign_id, leads, default_values } = req.body;
+        
+        if (!campaign_id) {
+            throw new Error('campaign_id is required');
+        }
+
+        if (!Array.isArray(leads) || leads.length === 0) {
+            throw new Error('leads must be a non-empty array');
+        }
+
+        // Process phone numbers to ensure E.164 format
+        const processedLeads = leads.map(lead => ({
+            ...lead,
+            phone: formatPhoneNumber(lead.phone)
+        }));
+
+        const result = await VoiceLead.bulkImport(
+            req.params.companyId,
+            campaign_id,
+            processedLeads,
+            default_values
+        );
+
+        res.status(201).json({ 
+            message: 'Leads imported successfully',
+            imported_count: result.length,
+            leads: result
+        });
+    } catch (error) {
+        res.status(400).json({ 
+            message: 'Error importing leads', 
+            error: error.message 
+        });
+    }
+});
+
 // Helper function to format phone numbers to E.164
 function formatPhoneNumber(phone) {
     // Remove all non-numeric characters
