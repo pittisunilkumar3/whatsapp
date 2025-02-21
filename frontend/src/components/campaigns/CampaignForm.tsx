@@ -24,6 +24,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'react-hot-toast';
 import Papa from 'papaparse';
+import { useAuthStore } from '~/store/authStore';
 
 type CampaignFormData = {
 	name: string;
@@ -427,6 +428,14 @@ export const CampaignForm = forwardRef<{
 				return;
 			}
 
+			const user = useAuthStore.getState().user;
+			const companyId = user?.company?.id;
+
+			if (!companyId) {
+				toast.error('Company ID not found. Please try logging in again.');
+				return;
+			}
+
 			// Validate all phone numbers before sending
 			const validatedLeads = parsedLeads.map((lead, index) => {
 				try {
@@ -479,7 +488,7 @@ export const CampaignForm = forwardRef<{
 				leads: payload.leads.slice(0, 2) // Log first 2 leads for debugging
 			});
 
-			const response = await fetch('http://localhost:5000/api/company/voice-leads/company/1/import-json', {
+			const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/company/voice-leads/company/${companyId}/import-json`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -1050,7 +1059,7 @@ export const CampaignForm = forwardRef<{
 									<div className="flex-shrink-0">
 										<Info className="h-5 w-5 text-blue-400" aria-hidden="true" />
 									</div>
-									<div className="ml-3 flex-1">
+									<div className="ml-3">
 										<h3 className="text-sm font-medium text-blue-800">CSV Format Requirements</h3>
 										<div className="mt-2 text-sm text-blue-700">
 											<p>Your CSV file should include the following columns:</p>
