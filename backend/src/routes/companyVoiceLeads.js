@@ -2,6 +2,40 @@ const express = require('express');
 const router = express.Router();
 const VoiceLead = require('../models/VoiceLead');
 const { validateDateRange, validatePagination } = require('../utils/validators');
+const multer = require('multer');
+const csv = require('csv-parse');
+const xlsx = require('xlsx');
+const path = require('path');
+const fs = require('fs');
+
+// Configure multer for file upload
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/');
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || 
+        file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+        file.mimetype === 'application/vnd.ms-excel') {
+        cb(null, true);
+    } else {
+        cb(new Error('Invalid file type. Only CSV and Excel files are allowed.'), false);
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    }
+});
 
 // Get all leads for a company
 router.get('/company/:companyId', async (req, res) => {
@@ -152,18 +186,56 @@ router.patch('/company/:companyId/bulk-assign', async (req, res) => {
     }
 });
 
-// Import leads for company
-router.post('/company/:companyId/import', async (req, res) => {
+// Import leads for company from file
+router.post('/company/:companyId/import', upload.single('file'), async (req, res) => {
     try {
-        const { campaign_id, leads, default_values } = req.body;
-        
-        if (!Array.isArray(leads) || leads.length === 0) {
-            throw new Error('leads must be a non-empty array');
+        if (!req.file) {
+            throw new Error('No file uploaded');
         }
 
+        const { campaign_id, default_values } = req.body;
+        
         if (!campaign_id) {
             throw new Error('campaign_id is required');
         }
+
+        let leads = [];
+        const fileExt = path.extname(req.file.originalname).toLowerCase();
+
+        if (fileExt === '.csv') {
+            // Parse CSV file
+            const fileContent = await fs.promises.readFile(req.file.path, 'utf-8');
+            leads = await new Promise((resolve, reject) => {
+                csv.parse(fileContent, {
+                    columns: true,
+                    skip_empty_lines: true,
+                    trim: true
+                }, (err, data) => {
+                    if (err) reject(err);
+                    else resolve(data);
+                });
+            });
+        } else if (fileExt === '.xlsx' || fileExt === '.xls') {
+            // Parse Excel file
+            const workbook = xlsx.readFile(req.file.path);
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            leads = xlsx.utils.sheet_to_json(worksheet);
+        }
+
+        // Clean up the uploaded file
+        await fs.promises.unlink(req.file.path);
+
+        // Validate and process leads
+        if (!Array.isArray(leads) || leads.length === 0) {
+            throw new Error('No valid leads found in the file');
+        }
+
+        // Process phone numbers to ensure E.164 format
+        leads = leads.map(lead => ({
+            ...lead,
+            phone: formatPhoneNumber(lead.phone)
+        }));
 
         const result = await VoiceLead.bulkImport(
             req.params.companyId,
@@ -171,15 +243,46 @@ router.post('/company/:companyId/import', async (req, res) => {
             leads,
             default_values
         );
+
         res.status(201).json({ 
             message: 'Leads imported successfully',
             imported_count: result.length,
             leads: result
         });
     } catch (error) {
-        res.status(400).json({ message: 'Error importing leads', error: error.message });
+        // Clean up uploaded file in case of error
+        if (req.file) {
+            fs.unlink(req.file.path, () => {});
+        }
+        res.status(400).json({ 
+            message: 'Error importing leads', 
+            error: error.message 
+        });
     }
 });
+
+// Helper function to format phone numbers to E.164
+function formatPhoneNumber(phone) {
+    // Remove all non-numeric characters
+    const numbers = phone.replace(/\D/g, '');
+    
+    // Check if the number already starts with '+'
+    if (phone.startsWith('+')) {
+        return phone;
+    }
+    
+    // Add country code if not present (assuming US/Canada numbers if no country code)
+    if (numbers.length === 10) {
+        return `+1${numbers}`;
+    }
+    
+    // If number includes country code but no '+', add it
+    if (numbers.length > 10) {
+        return `+${numbers}`;
+    }
+    
+    throw new Error(`Invalid phone number format: ${phone}`);
+}
 
 // Export company leads
 router.get('/company/:companyId/export', async (req, res) => {

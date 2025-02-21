@@ -143,31 +143,102 @@ class VoiceLead {
         return db.query(query, [campaignId, companyId]);
     }
 
-    static async validateLeadData(data) {
-        const requiredFields = ['phone', 'status', 'company_id'];
+    static async bulkImport(companyId, campaignId, leads, defaultValues = {}) {
+        // Validate campaign exists and belongs to company
+        const campaignQuery = `SELECT id FROM voice_campaigns WHERE id = ? AND company_id = ?`;
+        const [campaign] = await db.query(campaignQuery, [campaignId, companyId]);
         
-        const missingFields = requiredFields.filter(field => !data[field]);
+        if (!campaign) {
+            throw new Error('Invalid campaign_id or campaign does not belong to company');
+        }
+
+        // Prepare leads data with default values and required fields
+        const preparedLeads = leads.map(lead => ({
+            ...defaultValues,
+            ...lead,
+            campaign_id: campaignId,
+            company_id: companyId,
+            status: lead.status || defaultValues.status || 'pending',
+            created_at: new Date(),
+            updated_at: new Date()
+        }));
+
+        // Validate all leads data
+        for (const lead of preparedLeads) {
+            await this.validateLeadData(lead);
+        }
+
+        // Use transaction for bulk insert
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            const insertQuery = `INSERT INTO voice_leads SET ?`;
+            const insertedLeads = [];
+
+            for (const lead of preparedLeads) {
+                const [result] = await connection.query(insertQuery, lead);
+                insertedLeads.push({
+                    id: result.insertId,
+                    ...lead
+                });
+            }
+
+            await connection.commit();
+            return insertedLeads;
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    static async validateLeadData(leadData) {
+        const requiredFields = ['phone'];
+        const missingFields = requiredFields.filter(field => !leadData[field]);
+        
         if (missingFields.length > 0) {
             throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
         }
 
-        if (data.status && !['pending', 'in_progress', 'completed', 'failed', 'scheduled', 'blacklisted'].includes(data.status)) {
-            throw new Error('Invalid status value');
+        // Validate phone number format (E.164)
+        const phoneRegex = /^\+[1-9]\d{1,14}$/;
+        if (!phoneRegex.test(leadData.phone)) {
+            throw new Error('Phone number must be in E.164 format (e.g., +1234567890)');
         }
 
-        if (data.interest_level && !['low', 'medium', 'high'].includes(data.interest_level)) {
-            throw new Error('Invalid interest level value');
+        // Validate email if provided
+        if (leadData.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(leadData.email)) {
+                throw new Error('Invalid email format');
+            }
         }
 
-        if (data.lead_score && (data.lead_score < 0 || data.lead_score > 100)) {
-            throw new Error('Lead score must be between 0 and 100');
+        // Validate lead score if provided
+        if (leadData.lead_score !== undefined) {
+            const score = parseInt(leadData.lead_score);
+            if (isNaN(score) || score < 0 || score > 100) {
+                throw new Error('Lead score must be between 0 and 100');
+            }
         }
 
-        if (!data.company_id || typeof data.company_id !== 'number') {
-            throw new Error('Invalid company_id');
+        // Validate status if provided
+        if (leadData.status) {
+            const validStatuses = ['pending', 'in_progress', 'completed', 'failed', 'scheduled', 'blacklisted'];
+            if (!validStatuses.includes(leadData.status)) {
+                throw new Error('Invalid status value');
+            }
         }
 
-        return true;
+        // Validate interest level if provided
+        if (leadData.interest_level) {
+            const validInterestLevels = ['low', 'medium', 'high'];
+            if (!validInterestLevels.includes(leadData.interest_level)) {
+                throw new Error('Invalid interest level');
+            }
+        }
     }
 }
 

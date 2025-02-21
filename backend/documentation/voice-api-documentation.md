@@ -1077,38 +1077,77 @@ PATCH /api/company/voice-leads/company/{companyId}/bulk-assign
 }
 ```
 
-### 19. Import Company Leads
+### 19. Import Company Leads from File
 ```http
 POST /api/company/voice-leads/company/{companyId}/import
+Content-Type: multipart/form-data
 ```
 
-#### Request Body
-```json
-{
-    "campaign_id": 1,
-    "leads": [
-        {
-            "first_name": "John",
-            "last_name": "Doe",
-            "phone": "+1234567890",
-            "email": "john.doe@example.com"
-        },
-        {
-            "first_name": "Jane",
-            "last_name": "Smith",
-            "phone": "+1987654321",
-            "email": "jane.smith@example.com"
-        }
-    ],
-    "default_values": {
-        "status": "pending",
-        "priority": 3,
-        "source": "bulk_import"
-    }
-}
+#### Request Parameters
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| file | File | Yes | CSV or Excel file containing lead data |
+| campaign_id | integer | Yes | ID of the campaign to associate leads with |
+| default_values | JSON object | No | Default values to apply to all imported leads |
+
+#### File Format Requirements
+- Supported formats: CSV (.csv) or Excel (.xlsx, .xls)
+- Maximum file size: 10MB
+- First row must contain column headers
+- Required column: `phone`
+- Optional columns:
+  - first_name
+  - last_name
+  - email
+  - company_name
+  - job_title
+  - industry
+  - priority
+  - best_time_to_call
+  - timezone
+  - preferred_language
+  - country
+  - state
+  - city
+  - address
+  - postal_code
+  - source
+  - source_details
+  - annual_revenue
+  - company_size
+  - lead_score
+  - interest_level
+  - notes
+  - tags
+
+#### Phone Number Format
+Phone numbers in the file will be automatically formatted to E.164 format:
+- Numbers without country code (10 digits) will be assumed to be US/Canada (+1)
+- Numbers with country code but no '+' will have '+' added
+- Numbers already in E.164 format will be kept as is
+- Invalid phone numbers will cause an error
+
+#### Example CSV Format
+```csv
+first_name,last_name,phone,email,company_name,job_title
+John,Doe,+1234567890,john@example.com,ABC Corp,Manager
+Jane,Smith,1234567890,jane@example.com,XYZ Inc,Director
 ```
 
-#### Response (201 Created)
+#### Example Excel Format
+The Excel file should follow the same column structure as the CSV format.
+
+#### Example Request using curl
+```bash
+curl -X POST \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -F "file=@leads.csv" \
+  -F "campaign_id=123" \
+  -F "default_values={\"status\":\"pending\",\"source\":\"bulk_import\"}" \
+  https://api.example.com/api/company/voice-leads/company/456/import
+```
+
+#### Success Response (201 Created)
 ```json
 {
     "message": "Leads imported successfully",
@@ -1117,16 +1156,80 @@ POST /api/company/voice-leads/company/{companyId}/import
         {
             "id": 1,
             "first_name": "John",
-            // ... other lead fields
+            "last_name": "Doe",
+            "phone": "+1234567890",
+            "email": "john@example.com",
+            "company_name": "ABC Corp",
+            "job_title": "Manager",
+            "status": "pending",
+            "source": "bulk_import",
+            "campaign_id": 123,
+            "company_id": 456,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z"
         },
         {
             "id": 2,
             "first_name": "Jane",
-            // ... other lead fields
+            "last_name": "Smith",
+            "phone": "+11234567890",
+            "email": "jane@example.com",
+            "company_name": "XYZ Inc",
+            "job_title": "Director",
+            "status": "pending",
+            "source": "bulk_import",
+            "campaign_id": 123,
+            "company_id": 456,
+            "created_at": "2024-03-20T10:00:00Z",
+            "updated_at": "2024-03-20T10:00:00Z"
         }
     ]
 }
 ```
+
+#### Error Responses
+
+##### 400 Bad Request
+```json
+{
+    "message": "Error importing leads",
+    "error": "Detailed error message"
+}
+```
+
+Possible error messages:
+- "No file uploaded"
+- "Invalid file type. Only CSV and Excel files are allowed."
+- "File size exceeds 10MB limit"
+- "campaign_id is required"
+- "No valid leads found in the file"
+- "Invalid phone number format: {phone}"
+- "Missing required fields: phone"
+- "Invalid email format"
+- "Lead score must be between 0 and 100"
+- "Invalid status value"
+- "Invalid interest level"
+- "Invalid campaign_id or campaign does not belong to company"
+
+##### 500 Internal Server Error
+```json
+{
+    "message": "Error importing leads",
+    "error": "Internal server error message"
+}
+```
+
+#### Notes
+1. The file will be automatically deleted after processing, regardless of success or failure
+2. All leads are validated before import
+3. The import process uses a database transaction to ensure data consistency
+4. If any lead fails validation, the entire import will be rolled back
+5. Default values can be used to set common fields for all imported leads
+6. Phone numbers are automatically formatted to E.164 format
+7. The API supports both CSV and Excel file formats
+8. Empty rows in the file are automatically skipped
+9. All text fields are automatically trimmed
+10. The import process is atomic - either all leads are imported or none
 
 ### 20. Export Company Leads
 ```http
