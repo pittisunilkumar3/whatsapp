@@ -92,12 +92,19 @@ export const Employees: React.FC = () => {
 		department: ''
 	});
 	const [employees, setEmployees] = useState<Employee[]>([]);
+	
+	// Move useAuthStore hook to component level
+	const user = useAuthStore(state => state.user);
+	const companyId = user?.company?.id;
 
 	useEffect(() => {
-		const user = useAuthStore(state => state.user);
-    	const companyId = user?.company?.id;
 		const fetchEmployees = async () => {
 			try {
+				if (!companyId) {
+					console.error('Company ID not found');
+					return;
+				}
+				
 				const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/company-employees/company/${companyId}`);
 				const data = await response.json();
 				setEmployees(data.data);
@@ -374,4 +381,3 @@ export const Employees: React.FC = () => {
 		</div>
 	);
 };
-

@@ -517,7 +517,8 @@ export const CampaignForm = forwardRef<{
 			setParsedLeads([]);
 			setUploadedFile(null);
 			
-			navigate('/company-admin/communication/voice/campaigns');
+			// Navigate to the specific campaign page
+			navigate(`/company-admin/communication/voice/campaigns/${campaignId}`);
 		} catch (error) {
 			console.error('Error importing leads:', error);
 			toast.error(error instanceof Error ? error.message : 'Failed to import leads');
