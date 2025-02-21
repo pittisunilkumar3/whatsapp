@@ -153,15 +153,28 @@ class VoiceLead {
         }
 
         // Prepare leads data with default values and required fields
-        const preparedLeads = leads.map(lead => ({
-            ...defaultValues,
-            ...lead,
-            campaign_id: campaignId,
-            company_id: companyId,
-            status: lead.status || defaultValues.status || 'pending',
-            created_at: new Date(),
-            updated_at: new Date()
-        }));
+        const preparedLeads = leads.map(lead => {
+            // Handle tags by moving them to custom_fields
+            let customFields = lead.custom_fields || {};
+            if (lead.tags) {
+                customFields = {
+                    ...customFields,
+                    tags: lead.tags
+                };
+                delete lead.tags;
+            }
+
+            return {
+                ...defaultValues,
+                ...lead,
+                campaign_id: campaignId,
+                company_id: companyId,
+                status: lead.status || defaultValues.status || 'pending',
+                created_at: new Date(),
+                updated_at: new Date(),
+                custom_fields: JSON.stringify(customFields) // Ensure custom_fields is properly serialized
+            };
+        });
 
         // Validate all leads data
         for (const lead of preparedLeads) {
@@ -178,10 +191,13 @@ class VoiceLead {
 
             for (const lead of preparedLeads) {
                 const [result] = await connection.query(insertQuery, lead);
-                insertedLeads.push({
+                // For the response, parse custom_fields back to an object
+                const returnLead = {
                     id: result.insertId,
-                    ...lead
-                });
+                    ...lead,
+                    custom_fields: JSON.parse(lead.custom_fields)
+                };
+                insertedLeads.push(returnLead);
             }
 
             await connection.commit();
@@ -236,8 +252,24 @@ class VoiceLead {
         if (leadData.interest_level) {
             const validInterestLevels = ['low', 'medium', 'high'];
             if (!validInterestLevels.includes(leadData.interest_level)) {
-                throw new Error('Invalid interest level');
+                throw new Error('Invalid interest level. Must be one of: low, medium, high');
             }
+        }
+
+        // Handle tags by moving them to custom_fields if provided
+        if (leadData.tags) {
+            if (!Array.isArray(leadData.tags)) {
+                throw new Error('Tags must be an array');
+            }
+            
+            // Store tags in custom_fields
+            leadData.custom_fields = {
+                ...leadData.custom_fields,
+                tags: leadData.tags
+            };
+            
+            // Remove tags from root level since it's not a database column
+            delete leadData.tags;
         }
     }
 }

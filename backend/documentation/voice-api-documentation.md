@@ -547,7 +547,7 @@ POST /api/voice-leads
 | campaign_id | integer | Yes | ID of the associated campaign |
 | first_name | string | Yes | Lead's first name |
 | last_name | string | Yes | Lead's last name |
-| phone | string | Yes | Primary phone number (E.164 format) |
+| phone | string | Yes | Primary phone number (E.164 format with '+' prefix, e.g., +1234567890) |
 | alternate_phone | string | No | Secondary phone number |
 | email | string | No | Email address |
 | company_name | string | No | Lead's company name |
@@ -574,7 +574,7 @@ POST /api/voice-leads
 | custom_fields | object | No | Custom key-value pairs |
 | assigned_to | integer | No | ID of assigned agent |
 | notes | string | No | Additional notes |
-| tags | array | No | Array of tags |
+| tags | array | No | Array of tags (will be stored in custom_fields) |
 | last_contact_date | datetime | No | Last contact attempt date |
 | next_contact_date | datetime | No | Next scheduled contact |
 | company_id | integer | Yes | ID of the company owning the lead |
@@ -1226,30 +1226,10 @@ Possible error messages:
 4. If any lead fails validation, the entire import will be rolled back
 5. Default values can be used to set common fields for all imported leads
 6. Phone numbers are automatically formatted to E.164 format
-7. The API supports both CSV and Excel file formats
-8. Empty rows in the file are automatically skipped
-9. All text fields are automatically trimmed
-10. The import process is atomic - either all leads are imported or none
-
-### 20. Export Company Leads
-```http
-GET /api/company/voice-leads/company/{companyId}/export
-```
-
-#### Query Parameters
-- `format`: Export format ('csv' or 'xlsx', default: 'csv')
-- `campaign_ids`: Comma-separated list of campaign IDs to filter
-- `status`: Filter by lead status
-- `start_date`: Filter leads created after this date (YYYY-MM-DD)
-- `end_date`: Filter leads created before this date (YYYY-MM-DD)
-
-#### Response
-- For CSV format: Returns a CSV file with lead data
-- For XLSX format: Returns an Excel file with lead data
-
-Headers will be set appropriately:
-- For CSV: `Content-Type: text/csv`
-- For XLSX: `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+7. The import process is atomic - either all leads are imported or none
+8. All text fields are automatically trimmed
+9. Timezone defaults to UTC if not specified
+10. The API supports bulk imports of up to 1000 leads per request
 
 ### 20. Import Company Leads from JSON
 ```http
@@ -1267,7 +1247,7 @@ Content-Type: application/json
 #### Lead Object Schema
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| phone | string | Yes | Phone number (will be formatted to E.164) |
+| phone | string | Yes | Phone number (must be in E.164 format with '+' prefix, e.g., +1234567890) |
 | first_name | string | No | Lead's first name |
 | last_name | string | No | Lead's last name |
 | email | string | No | Email address |
@@ -1288,9 +1268,9 @@ Content-Type: application/json
 | annual_revenue | number | No | Company's annual revenue |
 | company_size | string | No | Company size range |
 | lead_score | integer | No | Lead scoring (0-100) |
-| interest_level | string | No | Interest level: 'low', 'medium', 'high' |
+| interest_level | enum | No | Interest level (must be one of: 'low', 'medium', 'high') |
 | notes | string | No | Additional notes |
-| tags | array | No | Array of tags |
+| tags | array | No | Array of tags (will be stored in custom_fields) |
 
 #### Example Request Body
 ```json
@@ -1373,6 +1353,9 @@ curl -X POST \
             "source": "api_import",
             "campaign_id": 123,
             "company_id": 456,
+            "custom_fields": {
+                "tags": ["enterprise", "high-value"]
+            },
             "created_at": "2024-03-20T10:00:00Z",
             "updated_at": "2024-03-20T10:00:00Z"
         },
@@ -1388,6 +1371,9 @@ curl -X POST \
             "source": "api_import",
             "campaign_id": 123,
             "company_id": 456,
+            "custom_fields": {
+                "tags": ["healthcare", "mid-market"]
+            },
             "created_at": "2024-03-20T10:00:00Z",
             "updated_at": "2024-03-20T10:00:00Z"
         }
