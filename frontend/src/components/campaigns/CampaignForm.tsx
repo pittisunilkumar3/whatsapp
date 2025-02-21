@@ -8,11 +8,15 @@ import { Switch } from '../ui/Switch';
 import { 
 	Users,
 	Clock,
-	AlertCircle,
 	FileText,
 	VolumeX,
 	Cog,
-	CheckCircle
+	CheckCircle,
+	Download,
+	Info,
+	AlertCircle,
+	AlertTriangle,
+	X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -129,7 +133,9 @@ export const CampaignForm = forwardRef<{
 	const navigate = useNavigate();
 	const [isLoading, setIsLoading] = useState(false);
 	const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+	const [parsedLeads, setParsedLeads] = useState<any[]>([]);
 	const [employees, setEmployees] = useState<Employee[]>([]);
+	const [campaignId, setCampaignId] = useState<number | null>(null);
 
 	useEffect(() => {
 		const fetchEmployees = async () => {
@@ -207,6 +213,16 @@ export const CampaignForm = forwardRef<{
 		mode: 'onChange'
 	});
 
+	interface CampaignResponse {
+		message: string;
+		data: {
+			id: number;
+			name: string;
+			status: string;
+			// ... other fields
+		};
+	}
+
 	const onSubmit = async (data: CampaignFormData) => {
 		setIsLoading(true);
 		try {
@@ -245,9 +261,9 @@ export const CampaignForm = forwardRef<{
 				company_id: data.company_id
 			};
 
-			console.log('Submitting data:', formattedData); // For debugging
+			console.log('Creating campaign:', formattedData);
 
-			const response = await fetch('/api/voice-campaigns', {
+			const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/voice-campaigns`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -257,19 +273,33 @@ export const CampaignForm = forwardRef<{
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				console.error('API Error Response:', errorData);
+				console.error('Campaign creation error:', errorData);
 				throw new Error(errorData.message || 'Error creating voice campaign');
 			}
 
-			const responseData = await response.json();
-			console.log('API Success Response:', responseData);
+			const responseData: CampaignResponse = await response.json();
+			console.log('Campaign created successfully:', responseData);
+			
+			// Store the campaign ID
+			if (responseData.data.id) {
+				setCampaignId(responseData.data.id);
+				toast.success(responseData.message || 'Campaign created successfully!');
 
-			// Clear stored form data on successful submission
+				// If there's an uploaded file, process it with the new campaign ID
+				if (uploadedFile) {
+					await importLeads(responseData.data.id);
+				} else {
+					// No file to process, navigate away
+					navigate('/company-admin/communication/voice/campaigns');
+				}
+			} else {
+				throw new Error('Campaign ID not received in response');
+			}
+
+			// Clear stored form data
 			localStorage.removeItem(STORAGE_KEY);
-			toast.success('Campaign created successfully!');
-			navigate('/company-admin/communication/voice/campaigns');
 		} catch (error) {
-			console.error('Error creating campaign:', error);
+			console.error('Error in campaign creation:', error);
 			if (error instanceof Error) {
 				toast.error(`Failed to create campaign: ${error.message}`);
 			} else {
@@ -280,63 +310,216 @@ export const CampaignForm = forwardRef<{
 		}
 	};
 
-	// Expose form methods to parent component
-	useImperativeHandle(ref, () => ({
-		submitForm: handleSubmit(onSubmit),
-		trigger,
-		formState: { errors },
-		getValues
-	}), [handleSubmit, onSubmit, trigger, errors, getValues]);
+	const formatToE164 = (phone: string | undefined | null): string => {
+		if (!phone) {
+			throw new Error('Phone number is required');
+		}
 
-	// Save form data to localStorage whenever it changes
-	const formData = watch();
-	useEffect(() => {
-		const timeoutId = setTimeout(() => {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-		}, 500);
-		return () => clearTimeout(timeoutId);
-	}, [formData]);
+		// Remove all non-digit characters except '+'
+		let cleaned = phone.toString().replace(/[^\d+]/g, '');
+		
+		// If number doesn't start with +, check if it has a country code
+		if (!cleaned.startsWith('+')) {
+			// Assume it's a 10-digit number and add +1 (US/Canada)
+			// If it's longer, it probably includes a country code already
+			if (cleaned.length === 10) {
+				cleaned = '+1' + cleaned;
+			} else if (cleaned.length > 10) {
+				cleaned = '+' + cleaned;
+			} else {
+				throw new Error(`Invalid phone number: ${phone} (must be at least 10 digits with optional country code)`);
+			}
+		}
+		
+		// Ensure there's at least 10 digits after the country code
+		const digitsAfterPlus = cleaned.substring(1).replace(/\D/g, '');
+		if (digitsAfterPlus.length < 10) {
+			throw new Error(`Invalid phone number: ${phone} (must have at least 10 digits after country code)`);
+		}
+		
+		return cleaned;
+	};
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				const content = e.target?.result as string;
-				Papa.parse(content, {
-					header: true,
-					complete: (results: { data: any[] }) => {
-						// Transform CSV data to the required format
-						const transformedData = {
-							campaign_id: Math.floor(Math.random() * 1000), // Generate random campaign ID
-							leads: results.data.map(row => ({
-								first_name: row['First Name'] || row['first_name'] || '',
-								last_name: row['Last Name'] || row['last_name'] || '',
-								phone: row['Phone'] || row['phone'] || '',
-								email: row['Email'] || row['email'] || '',
-								company_name: row['Company'] || row['company_name'] || '',
-								job_title: row['Job Title'] || row['job_title'] || '',
-								industry: row['Industry'] || row['industry'] || '',
-								priority: row['Priority'] ? Number(row['Priority']) : 1,
-								lead_score: row['Lead Score'] ? Number(row['Lead Score']) : 50,
-								interest_level: row['Interest Level'] || row['interest_level'] || 'medium',
-								tags: row['Tags'] ? row['Tags'].split(',').map((tag: string) => tag.trim()) : []
-							})),
-							default_values: {
-								status: 'pending',
-								source: 'api_import',
-								timezone: 'UTC'
-							}
-						};
+		try {
+			const file = event.target.files?.[0];
+			if (!file) return;
 
-						console.log(JSON.stringify(transformedData, null, 2));
+			setUploadedFile(file);
+			const reader = new FileReader();
+
+			reader.onload = async (e) => {
+				const csvData = e.target?.result as string;
+				
+				Papa.parse(csvData, {
+					header: true,
+					skipEmptyLines: true,
+					complete: (results) => {
+						try {
+							const leads = results.data.map((row: any, index: number) => {
+								try {
+									if (!row.phone) {
+										throw new Error('Phone number is required');
+									}
+
+									console.log(`Processing row ${index + 1}, phone:`, row.phone);
+									const formattedPhone = formatToE164(row.phone);
+									console.log(`Formatted phone for row ${index + 1}:`, formattedPhone);
+
+									return {
+										first_name: row.first_name || '',
+										last_name: row.last_name || '',
+										phone: formattedPhone,
+										email: row.email || '',
+										company_name: row.company_name || '',
+										job_title: row.job_title || '',
+										industry: row.industry || '',
+										priority: parseInt(row.priority) || 1,
+										lead_score: parseInt(row.lead_score) || 0,
+										interest_level: ['low', 'medium', 'high'].includes(row.interest_level?.toLowerCase()) 
+											? row.interest_level.toLowerCase() 
+											: 'medium',
+										tags: row.tags ? row.tags.split(',').map((tag: string) => tag.trim()) : []
+									};
+								} catch (error) {
+									throw new Error(`Row ${index + 1}: ${error.message}`);
+								}
+							});
+
+							setParsedLeads(leads);
+							toast.success(`CSV file processed: ${leads.length} leads ready to import`);
+						} catch (error) {
+							console.error('Error processing CSV data:', error);
+							toast.error(error instanceof Error ? error.message : 'Failed to process CSV file');
+							setParsedLeads([]);
+							setUploadedFile(null);
+						}
 					},
-					error: (error: any) => {
-						console.error('Error parsing CSV:', error);
+					error: (error) => {
+						console.error('CSV parsing error:', error);
+						toast.error('Failed to parse CSV file');
+						setParsedLeads([]);
+						setUploadedFile(null);
 					}
 				});
 			};
+
+			reader.onerror = () => {
+				console.error('File reading error:', reader.error);
+				toast.error('Failed to read file');
+				setParsedLeads([]);
+				setUploadedFile(null);
+			};
+
 			reader.readAsText(file);
+		} catch (error) {
+			console.error('Error handling file upload:', error);
+			toast.error('Failed to process file');
+			setParsedLeads([]);
+			setUploadedFile(null);
+		}
+	};
+
+	const importLeads = async (campaignId: number) => {
+		try {
+			if (parsedLeads.length === 0) {
+				toast.error('No leads to import');
+				return;
+			}
+
+			// Validate all phone numbers before sending
+			const validatedLeads = parsedLeads.map((lead, index) => {
+				try {
+					if (!lead.phone) {
+						throw new Error('Phone number is required');
+					}
+
+					console.log(`Validating lead ${index + 1}, phone:`, lead.phone);
+					const formattedPhone = formatToE164(lead.phone);
+					console.log(`Formatted phone for lead ${index + 1}:`, formattedPhone);
+
+					return {
+						...lead,
+						phone: formattedPhone
+					};
+				} catch (error) {
+					const name = lead.first_name || lead.last_name ? 
+						`${lead.first_name} ${lead.last_name}`.trim() : 
+						`Lead #${index + 1}`;
+					throw new Error(`${name}: ${error.message}`);
+				}
+			});
+
+			const payload = {
+				campaign_id: campaignId,
+				leads: validatedLeads.map(lead => ({
+					first_name: lead.first_name,
+					last_name: lead.last_name,
+					phone: lead.phone, // Already validated
+					email: lead.email,
+					company_name: lead.company_name,
+					job_title: lead.job_title,
+					industry: lead.industry,
+					priority: lead.priority,
+					lead_score: lead.lead_score,
+					interest_level: lead.interest_level,
+					custom_fields: {
+						tags: lead.tags
+					}
+				})),
+				default_values: {
+					status: 'pending',
+					source: 'api_import',
+					timezone: watch('time_zone') || 'UTC'
+				}
+			};
+
+			console.log('Importing leads with payload:', {
+				...payload,
+				leads: payload.leads.slice(0, 2) // Log first 2 leads for debugging
+			});
+
+			const response = await fetch('http://localhost:5000/api/company/voice-leads/company/1/import-json', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Accept': 'application/json'
+				},
+				body: JSON.stringify(payload)
+			});
+
+			const contentType = response.headers.get('content-type');
+			if (!contentType?.includes('application/json')) {
+				console.error('Received non-JSON response:', await response.text());
+				throw new Error('Server returned non-JSON response');
+			}
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				console.error('Lead import error response:', errorData);
+				throw new Error(errorData.message || errorData.error || 'Error importing leads');
+			}
+
+			const result = await response.json();
+			console.log('Lead import success response:', result);
+			toast.success(`Successfully imported ${validatedLeads.length} leads`);
+			
+			// Clear the stored leads after successful import
+			setParsedLeads([]);
+			setUploadedFile(null);
+			
+			navigate('/company-admin/communication/voice/campaigns');
+		} catch (error) {
+			console.error('Error importing leads:', error);
+			toast.error(error instanceof Error ? error.message : 'Failed to import leads');
+		}
+	};
+
+	const handleTeamMembersClick = async () => {
+		if (campaignId) {
+			await importLeads(campaignId);
+		} else {
+			toast.error('Campaign ID not available. Please save the campaign first.');
 		}
 	};
 
@@ -804,49 +987,121 @@ export const CampaignForm = forwardRef<{
 			case 4: // Lead Management
 				return (
 					<div className="space-y-8">
-						<div className="border-2 border-dashed border-gray-300 rounded-lg p-8">
-							<div className="text-center space-y-6">
-								<div className="mx-auto h-16 w-16 text-gray-400 flex items-center justify-center">
-									<Users className="h-12 w-12" />
-								</div>
-								<div className="space-y-4">
-									<label
-										htmlFor="file-upload"
-										className="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+						<div className="space-y-6">
+							<div>
+								<h2 className="text-base font-semibold leading-7 text-gray-900">
+									Upload Leads
+								</h2>
+								<p className="mt-1 text-sm leading-6 text-gray-600">
+									Upload your leads CSV file. Make sure it contains the required fields.
+								</p>
+							</div>
+
+							<div className="col-span-full">
+								<div className="mt-2 flex flex-col items-start space-y-4">
+									<a
+										href="/sample-leads.csv"
+										download
+										className="inline-flex items-center gap-x-2 rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
 									>
-										<span>Upload a file</span>
-										<input
-											id="file-upload"
-											name="file-upload"
-											type="file"
-											className="sr-only"
-											accept=".csv,.xlsx"
-											onChange={handleFileUpload}
-										/>
-									</label>
-									<p className="text-sm text-gray-500">
-										CSV or Excel files only
-									</p>
+										<Download className="-ml-0.5 h-5 w-5" aria-hidden="true" />
+										Download Sample CSV
+									</a>
+									
+									<div className="w-full">
+										<label
+											htmlFor="file-upload"
+											className="block text-sm font-medium leading-6 text-gray-900"
+										>
+											CSV File
+										</label>
+										<div className="mt-2 flex items-center justify-between gap-x-3">
+											<input
+												type="file"
+												id="file-upload"
+												name="file-upload"
+												accept=".csv"
+												onChange={handleFileUpload}
+												className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+											/>
+										</div>
+									</div>
+
+									{uploadedFile && (
+										<div className="mt-4 flex items-center space-x-2">
+											<CheckCircle className="h-5 w-5 text-green-500" />
+											<span className="text-sm text-gray-600">
+												File uploaded: {uploadedFile.name}
+											</span>
+											<button
+												type="button"
+												onClick={() => setUploadedFile(null)}
+												className="ml-2 text-gray-400 hover:text-gray-500"
+											>
+												<X className="h-4 w-4" />
+											</button>
+										</div>
+									)}
 								</div>
 							</div>
-							{uploadedFile && (
-								<div className="mt-8 bg-gray-50 rounded-lg p-4">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center space-x-3">
-											<div className="h-5 w-5 text-green-500 flex items-center justify-center">
-												<Clock className="h-4 w-4" />
-											</div>
-											<span className="text-sm font-medium text-gray-900">
-												{uploadedFile.name}
-											</span>
+
+							<div className="rounded-md bg-blue-50 p-4">
+								<div className="flex">
+									<div className="flex-shrink-0">
+										<Info className="h-5 w-5 text-blue-400" aria-hidden="true" />
+									</div>
+									<div className="ml-3 flex-1">
+										<h3 className="text-sm font-medium text-blue-800">CSV Format Requirements</h3>
+										<div className="mt-2 text-sm text-blue-700">
+											<p>Your CSV file should include the following columns:</p>
+											<ul className="mt-1 list-disc list-inside space-y-1">
+												<li>first_name - Contact's first name</li>
+												<li>last_name - Contact's last name</li>
+												<li>phone - Phone number in E.164 format (e.g., +14155552671)</li>
+												<li>email - Contact's email address</li>
+												<li>company_name - Company name</li>
+												<li>job_title - Job title</li>
+												<li>industry - Industry</li>
+												<li>priority - Priority level (1-3)</li>
+												<li>lead_score - Lead score (0-100)</li>
+												<li>interest_level - Interest level (low/medium/high)</li>
+												<li>tags - Comma-separated tags</li>
+											</ul>
 										</div>
-										<button
-											type="button"
-											className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-red-700 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-											onClick={() => setUploadedFile(null)}
-										>
-											Remove
-										</button>
+									</div>
+								</div>
+							</div>
+
+							{parsedLeads.length > 0 && (
+								<div className="rounded-md bg-green-50 p-4">
+									<div className="flex">
+										<div className="flex-shrink-0">
+											<CheckCircle className="h-5 w-5 text-green-400" aria-hidden="true" />
+										</div>
+										<div className="ml-3">
+											<h3 className="text-sm font-medium text-green-800">
+												{parsedLeads.length} leads ready to import
+											</h3>
+											<div className="mt-2 text-sm text-green-700">
+												<p>Your leads have been validated and are ready to be imported.</p>
+											</div>
+										</div>
+									</div>
+								</div>
+							)}
+
+							{errors.file && (
+								<div className="rounded-md bg-red-50 p-4">
+									<div className="flex">
+										<div className="flex-shrink-0">
+											<AlertCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
+										</div>
+										<div className="ml-3">
+											<h3 className="text-sm font-medium text-red-800">Upload Error</h3>
+											<div className="mt-2 text-sm text-red-700">
+												<p>{errors.file.message}</p>
+											</div>
+										</div>
 									</div>
 								</div>
 							)}
@@ -927,12 +1182,28 @@ export const CampaignForm = forwardRef<{
 		}
 	};
 
+	useImperativeHandle(ref, () => ({
+		submitForm: handleSubmit(onSubmit),
+		trigger,
+		formState: { errors },
+		getValues
+	}), [handleSubmit, onSubmit, trigger, errors, getValues]);
+
+	// Save form data to localStorage whenever it changes
+	const formData = watch();
+	useEffect(() => {
+		const timeoutId = setTimeout(() => {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+		}, 500);
+		return () => clearTimeout(timeoutId);
+	}, [formData]);
+
 	return (
 		<form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
 			{renderStepContent()}
 			{Object.keys(errors).length > 0 && (
-				<div className="text-red-500 mt-4">
-					Please fix the errors above before proceeding.
+				<div className="text-red-500">
+					Please fix the errors above to continue.
 				</div>
 			)}
 		</form>

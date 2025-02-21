@@ -1,0 +1,6 @@
+first_name,last_name,phone,email,company_name,job_title,industry,priority,lead_score,interest_level,tags
+John,Doe,+14155552671,john.doe@example.com,Acme Corp,CEO,Technology,1,85,high,enterprise,b2b
+Jane,Smith,+14155552672,jane.smith@example.com,Tech Solutions,CTO,Software,2,75,medium,startup,saas
+Michael,Johnson,+14155552673,michael.j@example.com,Digital Inc,Manager,IT Services,1,90,high,enterprise,tech
+Sarah,Williams,+14155552674,sarah.w@example.com,Cloud Systems,Director,Cloud Computing,2,80,medium,midmarket,cloud
+Robert,Brown,+14155552675,robert.b@example.com,Data Corp,VP Sales,Data Analytics,1,95,high,enterprise,data
