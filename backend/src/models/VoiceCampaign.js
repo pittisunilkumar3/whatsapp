@@ -528,132 +528,144 @@ class VoiceCampaign {
             const client = twilio(twilioConfig.account_sid, twilioConfig.auth_token);
             const callResults = [];
 
+            // Function to check campaign status
+            const checkCampaignStatus = async () => {
+                const [campaign] = await db.query(
+                    'SELECT status FROM voice_campaigns WHERE id = ? AND company_id = ?',
+                    [campaignId, companyId]
+                );
+                return campaign && campaign[0] && campaign[0].status === 'active';
+            };
+
             // Function to initiate a call and process sequentially
-            // const initiateSequentialCall = async (index) => {
-            //     if (index >= leads.length) {
-            //         return callResults;
-            //     }
+            const initiateSequentialCall = async (index) => {
+                if (index >= leads.length) {
+                    return callResults;
+                }
 
-            //     const lead = leads[index];
+                // Check if campaign is still active
+                const isActive = await checkCampaignStatus();
+                if (!isActive) {
+                    console.log('Campaign is no longer active, stopping further calls');
+                    return callResults;
+                }
+
+                const lead = leads[index];
                 
-            //     try {
-            //         // Create Ultravox Call
-            //         const { joinUrl } = await this.createUltravoxCall(companyId);
+                try {
+                    // Create Ultravox Call
+                    const { joinUrl } = await this.createUltravoxCall(companyId);
 
-            //         // Initiate Twilio Call
-            //         const call = await client.calls.create({
-            //             twiml: `<Response><Connect><Stream url="${joinUrl}"/></Connect></Response>`,
-            //             to: lead.phone,
-            //             from: twilioConfig.phone_number
-            //         });
+                    // Initiate Twilio Call
+                    const call = await client.calls.create({
+                        twiml: `<Response><Connect><Stream url="${joinUrl}"/></Connect></Response>`,
+                        to: lead.phone,
+                        from: twilioConfig.phone_number
+                    });
 
-            //         // Update lead status
-            //         await db.query(
-            //             'UPDATE voice_leads SET status = ?, call_sid = ? WHERE id = ?',
-            //             ['in_progress', call.sid, lead.id]
-            //         );
+                    // Update lead status
+                    await db.query(
+                        'UPDATE voice_leads SET status = ?, call_sid = ? WHERE id = ?',
+                        ['in_progress', call.sid, lead.id]
+                    );
 
-            //         // Track call result
-            //         callResults.push({
-            //             leadId: lead.id,
-            //             phoneNumber: lead.phone,
-            //             status: 'initiated',
-            //             callSid: call.sid,
-            //             joinUrl
-            //         });
+                    // Track call result
+                    callResults.push({
+                        leadId: lead.id,
+                        phoneNumber: lead.phone,
+                        status: 'initiated',
+                        callSid: call.sid,
+                        joinUrl
+                    });
 
-            //         // Check call status and proceed to next call
-            //         return new Promise((resolve, reject) => {
-            //             const checkCallStatus = () => {
-            //                 client.calls(call.sid)
-            //                     .fetch()
-            //                     .then(async (fetchedCall) => {
-            //                         if (fetchedCall.status === 'completed') {
-            //                             console.log(`Call to ${lead.phone} completed.`);
-            //                             callResults[index].status = 'completed';
-            //                             await db.query(
-            //                                 'UPDATE voice_leads SET status = ? WHERE id = ?',
-            //                                 ['completed', lead.id]
-            //                             );
-            //                             resolve(initiateSequentialCall(index + 1));
-            //                         } else if (fetchedCall.status === 'busy') {
-            //                             console.log(`Call to ${lead.phone} failed, recipient's line is busy.`);
-            //                             callResults[index].status = 'busy';
-            //                             await db.query(
-            //                                 'UPDATE voice_leads SET status = ? WHERE id = ?',
-            //                                 ['busy', lead.id]
-            //                             );
-            //                             resolve(initiateSequentialCall(index + 1));
-            //                         } else if (fetchedCall.status === 'failed') {
-            //                             console.log(`Call to ${lead.phone} failed.`);
-            //                             callResults[index].status = 'failed';
-            //                             await db.query(
-            //                                 'UPDATE voice_leads SET status = ? WHERE id = ?',
-            //                                 ['failed', lead.id]
-            //                             );
-            //                             resolve(initiateSequentialCall(index + 1));
-            //                         } else if (fetchedCall.status === 'no-answer') {
-            //                             console.log(`Call to ${lead.phone} was not answered.`);
-            //                             callResults[index].status = 'no_answer';
-            //                             await db.query(
-            //                                 'UPDATE voice_leads SET status = ? WHERE id = ?',
-            //                                 ['no_answer', lead.id]
-            //                             );
-            //                             resolve(initiateSequentialCall(index + 1));
-            //                         } else if (fetchedCall.status === 'cancelled') {
-            //                             console.log(`Call to ${lead.phone} was cancelled.`);
-            //                             callResults[index].status = 'cancelled';
-            //                             await db.query(
-            //                                 'UPDATE voice_leads SET status = ? WHERE id = ?',
-            //                                 ['cancelled', lead.id]
-            //                             );
-            //                             resolve(initiateSequentialCall(index + 1));
-            //                         } else {
-            //                             console.log(`Call to ${lead.phone} is still in progress...`);
-            //                             setTimeout(checkCallStatus, 5000);
-            //                         }
-            //                     })
-            //                     .catch(async (error) => {
-            //                         console.error(`Error fetching call status: ${error.message}`);
-            //                         callResults[index].status = 'error';
-            //                         await db.query(
-            //                             'UPDATE voice_leads SET status = ? WHERE id = ?',
-            //                             ['error', lead.id]
-            //                         );
-            //                         resolve(initiateSequentialCall(index + 1));
-            //                     });
-            //             };
+                    // Check call status and proceed to next call
+                    return new Promise((resolve, reject) => {
+                        const checkCallStatus = async () => {
+                            try {
+                                // Check if campaign is still active before checking call status
+                                const isStillActive = await checkCampaignStatus();
+                                if (!isStillActive) {
+                                    console.log('Campaign is no longer active during call status check');
+                                    callResults[index].status = 'cancelled';
+                                    await db.query(
+                                        'UPDATE voice_leads SET status = ? WHERE id = ?',
+                                        ['cancelled', lead.id]
+                                    );
+                                    resolve(callResults);
+                                    return;
+                                }
 
-            //             setTimeout(checkCallStatus, 5000);
-            //         });
-            //     } catch (callError) {
-            //         console.error(`Error initiating call to ${lead.phone}:`, callError);
+                                const fetchedCall = await client.calls(call.sid).fetch();
+                                const updateStatusAndProceed = async (status) => {
+                                    callResults[index].status = status;
+                                    await db.query(
+                                        'UPDATE voice_leads SET status = ? WHERE id = ?',
+                                        [status, lead.id]
+                                    );
+                                    resolve(initiateSequentialCall(index + 1));
+                                };
+
+                                switch (fetchedCall.status) {
+                                    case 'completed':
+                                        console.log(`Call to ${lead.phone} completed.`);
+                                        await updateStatusAndProceed('completed');
+                                        break;
+                                    case 'busy':
+                                        console.log(`Call to ${lead.phone} failed, recipient's line is busy.`);
+                                        await updateStatusAndProceed('busy');
+                                        break;
+                                    case 'failed':
+                                        console.log(`Call to ${lead.phone} failed.`);
+                                        await updateStatusAndProceed('failed');
+                                        break;
+                                    case 'no-answer':
+                                        console.log(`Call to ${lead.phone} was not answered.`);
+                                        await updateStatusAndProceed('no_answer');
+                                        break;
+                                    case 'cancelled':
+                                        console.log(`Call to ${lead.phone} was cancelled.`);
+                                        await updateStatusAndProceed('cancelled');
+                                        break;
+                                    default:
+                                        console.log(`Call to ${lead.phone} is still in progress...`);
+                                        setTimeout(checkCallStatus, 5000);
+                                }
+                            } catch (error) {
+                                console.error(`Error checking call status: ${error.message}`);
+                                callResults[index].status = 'error';
+                                await db.query(
+                                    'UPDATE voice_leads SET status = ? WHERE id = ?',
+                                    ['error', lead.id]
+                                );
+                                resolve(initiateSequentialCall(index + 1));
+                            }
+                        };
+
+                        setTimeout(checkCallStatus, 5000);
+                    });
+                } catch (callError) {
+                    console.error(`Error initiating call to ${lead.phone}:`, callError);
                     
-            //         await db.query(
-            //             'UPDATE voice_leads SET status = ? WHERE id = ?',
-            //             ['failed', lead.id]
-            //         );
+                    await db.query(
+                        'UPDATE voice_leads SET status = ? WHERE id = ?',
+                        ['failed', lead.id]
+                    );
 
-            //         callResults.push({
-            //             leadId: lead.id,
-            //             phoneNumber: lead.phone,
-            //             status: 'initiation_error',
-            //             error: callError.message
-            //         });
+                    callResults.push({
+                        leadId: lead.id,
+                        phoneNumber: lead.phone,
+                        status: 'initiation_error',
+                        error: callError.message
+                    });
 
-            //         return initiateSequentialCall(index + 1);
-            //     }
-            // };
+                    return initiateSequentialCall(index + 1);
+                }
+            };
 
-            // // Start sequential call processing
-            // await initiateSequentialCall(0);
+            // Start sequential call processing
+            await initiateSequentialCall(0);
 
-            // return callResults;
-
-
-
-
-
+            return callResults;
         } catch (error) {
             console.error('Error in initiateSequentialCalls:', error);
             throw error;
@@ -722,6 +734,19 @@ class VoiceCampaign {
         }
     }
 
+    static async checkCampaignStatus(campaignId, companyId) {
+        try {
+            const [campaign] = await db.query(
+                'SELECT status FROM voice_campaigns WHERE id = ? AND company_id = ?',
+                [campaignId, companyId]
+            );
+            return campaign && campaign[0] && campaign[0].status === 'active';
+        } catch (error) {
+            console.error('Error checking campaign status:', error);
+            return false;
+        }
+    }
+
     static async validateCampaignData(data) {
         const requiredFields = [
             'name', 
@@ -787,6 +812,19 @@ class VoiceCampaign {
         }
 
         return true;
+    }
+
+    static async updateLeadStatus(leadId, status) {
+        try {
+            const query = 'UPDATE voice_leads SET status = ? WHERE id = ?';
+            const params = [status, leadId];
+
+            const [result] = await db.query(query, params);
+            return result;
+        } catch (error) {
+            console.error('Error updating lead status:', error);
+            throw error;
+        }
     }
 }
 

@@ -16,7 +16,7 @@ module.exports = {
                     company_name VARCHAR(100),
                     job_title VARCHAR(100),
                     industry VARCHAR(100),
-                    status ENUM('pending', 'in_progress', 'completed', 'failed', 'scheduled', 'blacklisted') NOT NULL,
+                    status ENUM('pending', 'busy', 'completed', 'failed', 'no-answer', 'cancelled', 'blacklisted') NOT NULL,
                     sub_status VARCHAR(50),
                     priority INT DEFAULT 0,
                     attempts_made INT DEFAULT 0,
