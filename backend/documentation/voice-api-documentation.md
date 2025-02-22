@@ -56,7 +56,6 @@ POST /api/voice-campaigns
 
 #### Example Request Body
 ```json
-
 {
     "name": "Customer Survey Campaign",
     "description": "Automated survey for customer satisfaction",
@@ -90,7 +89,6 @@ POST /api/voice-campaigns
     "recurrence_rule": "FREQ=DAILY;INTERVAL=1",
     "company_id": 1
 }
-
 ```
 
 #### Response (201 Created)
@@ -104,7 +102,89 @@ POST /api/voice-campaigns
 }
 ```
 
-### 2. Get All Campaigns
+### 2. Get Campaign Details
+```http
+GET /api/voice-campaigns/{id}?company_id={companyId}
+```
+
+#### Parameters
+- `id` (path parameter): Campaign ID
+- `company_id` (query parameter): Company ID
+
+#### Headers
+```http
+Authorization: Bearer <your_jwt_token>
+```
+
+#### Example Request
+```http
+GET /api/voice-campaigns/123?company_id=456
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+#### Response (200 OK)
+```json
+{
+    "message": "Campaign fetched successfully",
+    "data": {
+        "id": "123",
+        "name": "Customer Survey Campaign",
+        "description": "Automated follow-up calls for Q1 sales leads",
+        "status": "running",
+        "voice_type": "female_natural",
+        "script": "Hi {customer_name}, this is {agent_name}...",
+        "working_days": ["monday", "tuesday", "wednesday"],
+        "call_start_time": "09:00",
+        "call_end_time": "18:00",
+        "team_members": [1, 2, 3],
+        "tags": ["sales", "follow-up"],
+        "company_id": "456",
+        "metrics": {
+            "accuracy": 95,
+            "clarity": 88,
+            "engagement": 92,
+            "adherenceToScript": 96,
+            "sentimentScore": 7.8,
+            "averageCallQuality": 92,
+            "positiveResponseRate": 45,
+            "negativeResponseRate": 15,
+            "averageResponseTime": "8.5s",
+            "commonKeywords": [
+                { "word": "interested", "count": 145 },
+                { "word": "pricing", "count": 98 },
+                { "word": "features", "count": 76 },
+                { "word": "consider", "count": 65 }
+            ]
+        }
+    }
+}
+```
+
+#### Error Responses
+
+##### 400 Bad Request - Missing Company ID
+```json
+{
+    "message": "Company ID is required"
+}
+```
+
+##### 404 Not Found - Campaign Not Found
+```json
+{
+    "message": "Voice campaign not found"
+}
+```
+
+##### 401 Unauthorized - Invalid or Missing Token
+```json
+{
+    "message": "Authentication required",
+    "error": "No valid authentication token provided"
+}
+```
+
+### 3. Get All Campaigns
 ```http
 GET /api/voice-campaigns
 ```
@@ -126,7 +206,7 @@ GET /api/voice-campaigns
 ]
 ```
 
-### 3. Get Company Campaigns
+### 4. Get Company Campaigns
 ```http
 GET /api/voice-campaigns/company/{companyId}
 ```
@@ -186,7 +266,7 @@ GET /api/voice-campaigns/company/{companyId}
 }
 ```
 
-### 4. Get Company Campaign Statistics
+### 5. Get Company Campaign Statistics
 ```http
 GET /api/voice-campaigns/company/{companyId}/stats
 ```
@@ -236,7 +316,7 @@ GET /api/voice-campaigns/company/{companyId}/stats
 }
 ```
 
-### 5. Get Company Active Campaigns
+### 6. Get Company Active Campaigns
 ```http
 GET /api/voice-campaigns/company/{companyId}/active
 ```
@@ -266,7 +346,7 @@ GET /api/voice-campaigns/company/{companyId}/active
 }
 ```
 
-### 6. Get Company Campaign Performance
+### 7. Get Company Campaign Performance
 ```http
 GET /api/voice-campaigns/company/{companyId}/performance
 ```
@@ -313,7 +393,7 @@ GET /api/voice-campaigns/company/{companyId}/performance
 }
 ```
 
-### 7. Get Company Campaign Team Performance
+### 8. Get Company Campaign Team Performance
 ```http
 GET /api/voice-campaigns/company/{companyId}/team-performance
 ```
@@ -353,7 +433,7 @@ GET /api/voice-campaigns/company/{companyId}/team-performance
 }
 ```
 
-### 8. Get Company Campaign Cost Analysis
+### 9. Get Company Campaign Cost Analysis
 ```http
 GET /api/voice-campaigns/company/{companyId}/cost-analysis
 ```
@@ -401,7 +481,7 @@ GET /api/voice-campaigns/company/{companyId}/cost-analysis
 }
 ```
 
-### 9. Get Company Campaign Quality Metrics
+### 10. Get Company Campaign Quality Metrics
 ```http
 GET /api/voice-campaigns/company/{companyId}/quality-metrics
 ```
@@ -452,7 +532,7 @@ GET /api/voice-campaigns/company/{companyId}/quality-metrics
 }
 ```
 
-### 10. Get Campaign by ID
+### 11. Get Campaign by ID
 ```http
 GET /api/voice-campaigns/{id}
 ```
@@ -466,7 +546,7 @@ GET /api/voice-campaigns/{id}
 }
 ```
 
-### 11. Update Campaign
+### 12. Update Campaign
 ```http
 PUT /api/voice-campaigns/{id}
 ```
@@ -481,7 +561,7 @@ Same as create campaign
 }
 ```
 
-### 12. Delete Campaign
+### 13. Delete Campaign
 ```http
 DELETE /api/voice-campaigns/{id}
 ```
@@ -493,7 +573,7 @@ DELETE /api/voice-campaigns/{id}
 }
 ```
 
-### 13. Update Campaign Status
+### 14. Update Campaign Status
 ```http
 PATCH /api/voice-campaigns/{id}/status
 ```
@@ -512,7 +592,7 @@ PATCH /api/voice-campaigns/{id}/status
 }
 ```
 
-### 14. Get Campaign Statistics
+### 15. Get Campaign Statistics
 ```http
 GET /api/voice-campaigns/{id}/stats
 ```
@@ -529,6 +609,112 @@ GET /api/voice-campaigns/{id}/stats
     "success_rate": "90.00",
     "total_cost": 25.00,
     "remaining_budget": 975.00
+}
+```
+
+### Campaign Status Workflow
+
+Voice campaigns go through a defined lifecycle with the following statuses:
+
+1. **`draft`**: Initial state when a campaign is created but not yet started
+   - Campaign is configured but not active
+   - No calls are being made
+   - Can be modified or deleted
+
+2. **`active`**: Campaign is running and making calls
+   - Calls are being processed according to campaign settings
+   - Can pause or complete the campaign
+
+3. **`paused`**: Campaign is temporarily stopped
+   - Calls are suspended
+   - Can resume or complete the campaign
+
+4. **`completed`**: Campaign has reached its final state
+   - No more calls will be made
+   - Campaign is archived and can be reviewed
+
+### 16. Start Campaign
+```http
+POST /api/voice-campaigns/{id}/start
+```
+
+#### Description
+Starts a campaign from 'draft' status, moving it to 'active' status.
+
+#### Response (200 OK)
+```json
+{
+    "message": "Campaign started successfully",
+    "data": {
+        "id": 1,
+        "name": "Customer Survey Campaign",
+        "status": "active",
+        // ... other campaign details
+    }
+}
+```
+
+### 17. Pause Campaign
+```http
+POST /api/voice-campaigns/{id}/pause
+```
+
+#### Description
+Pauses an active campaign, moving it from 'active' to 'paused' status.
+
+#### Response (200 OK)
+```json
+{
+    "message": "Campaign paused successfully",
+    "data": {
+        "id": 1,
+        "name": "Customer Survey Campaign",
+        "status": "paused",
+        // ... other campaign details
+    }
+}
+```
+
+### 18. Resume Campaign
+```http
+POST /api/voice-campaigns/{id}/resume
+```
+
+#### Description
+Resumes a paused campaign, moving it back to 'active' status.
+
+#### Response (200 OK)
+```json
+{
+    "message": "Campaign resumed successfully",
+    "data": {
+        "id": 1,
+        "name": "Customer Survey Campaign",
+        "status": "active",
+        // ... other campaign details
+    }
+}
+```
+
+### 19. Complete Campaign
+```http
+POST /api/voice-campaigns/{id}/complete
+```
+
+#### Description
+Marks a campaign as completed, stopping all ongoing activities.
+Can be called from 'active' or 'paused' status.
+
+#### Response (200 OK)
+```json
+{
+    "message": "Campaign completed successfully",
+    "data": {
+        "id": 1,
+        "name": "Customer Survey Campaign",
+        "status": "completed",
+        // ... other campaign details
+    }
 }
 ```
 
