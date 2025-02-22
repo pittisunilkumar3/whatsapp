@@ -583,7 +583,7 @@ router.post('/:id/resume', async (req, res) => {
                                     await updateStatusAndProceed('failed');
                                 } else if (fetchedCall.status === 'no-answer') {
                                     console.log(`Call to ${fetchedCall.to} was not answered.`);
-                                    await updateStatusAndProceed('no_answer');
+                                    await updateStatusAndProceed('no-answer');
                                 } else if (fetchedCall.status === 'cancelled') {
                                     console.log(`Call to ${fetchedCall.to} was cancelled.`);
                                     await updateStatusAndProceed('cancelled');

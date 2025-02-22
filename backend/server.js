@@ -35,6 +35,8 @@ const voiceLeadRoutes = require('./src/routes/voiceLeads');
 const companyVoiceCampaignRoutes = require('./src/routes/companyVoiceCampaigns');
 const companyVoiceLeadRoutes = require('./src/routes/companyVoiceLeads');
 
+const voiceCallRoutes = require('./src/routes/calls');
+
 const ultravoxConfigurationRoutes = require('./src/routes/ultravoxConfigurationRoutes');
 const ultravoxCallRoutes = require('./src/routes/ultravoxCallRoutes');
 
@@ -86,6 +88,7 @@ app.use('/api/voice-campaigns', voiceCampaignRoutes);
 app.use('/api/voice-leads', voiceLeadRoutes);
 app.use('/api/company/voice-campaigns', companyVoiceCampaignRoutes);
 app.use('/api/company/voice-leads', companyVoiceLeadRoutes);
+app.use('/api/voice-calls', voiceCallRoutes);
 
 app.use('/api/ultravox-config', ultravoxConfigurationRoutes);
 app.use('/api/ultravox-calls', ultravoxCallRoutes);
@@ -100,13 +103,11 @@ console.log('API routes setup completed');
 		await sequelize.authenticate();
 		console.log('Database connection successful');
 
-		const PORT = process.env.PORT || 5000;
+		const PORT = process.env.PORT || 3000;
 
 		const server = app.listen(PORT, () => {
-			console.log(`Server running on port ${PORT}`);
+			console.log(`Server is running on port ${PORT}`);
 		});
-
-
 
 		server.on('error', (err) => {
 			console.error('Server failed to start:', err);
@@ -140,7 +141,3 @@ console.log('API routes setup completed');
 		process.exit(1);
 	}
 })();
-
-
-
-
