@@ -178,6 +178,8 @@ router.post('/initiate-call', async (req, res) => {
 /**
  * Route to initiate sequential Ultravox calls from an array of phone numbers
  */
+
+
 router.post('/bulk-calls-sequential', async (req, res) => {
     try {
         const { 
@@ -209,6 +211,7 @@ router.post('/bulk-calls-sequential', async (req, res) => {
 
         // Function to initiate a call and process sequentially
         const initiateSequentialCall = async (index) => {
+            
             if (index >= phoneNumbers.length) {
                 return callResults;
             }
@@ -221,9 +224,11 @@ router.post('/bulk-calls-sequential', async (req, res) => {
 
                 // Initiate Twilio Call
                 const call = await client.calls.create({
+
                     twiml: `<Response><Connect><Stream url="${joinUrl}"/></Connect></Response>`,
                     to: phoneNumber,
                     from: twilioConfig.phone_number
+
                 });
 
                 // Track call result
@@ -275,6 +280,7 @@ router.post('/bulk-calls-sequential', async (req, res) => {
 
                     setTimeout(checkCallStatus, 5000);
                 });
+            
             } catch (callError) {
                 // Handle call initiation error
                 callResults.push({
@@ -295,11 +301,14 @@ router.post('/bulk-calls-sequential', async (req, res) => {
             totalCalls: phoneNumbers.length,
             callResults 
         });
+
     } catch (error) {
         console.error('Error processing bulk calls:', error);
         res.status(500).json({ error: error.message });
     }
 });
+
+
 
 /**
  * Route to fetch available voices from Ultravox API

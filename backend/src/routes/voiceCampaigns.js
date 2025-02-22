@@ -1,6 +1,79 @@
 const express = require('express');
 const router = express.Router();
 const VoiceCampaign = require('../models/VoiceCampaign');
+const twilio = require('twilio');
+const https = require('https');
+
+const TwilioConfig = require('../models/TwilioConfig');
+const UltravoxConfiguration = require('../models/UltravoxConfiguration');
+
+
+
+
+
+
+
+async function createUltravoxCall(companyId) {
+    try {
+        // Fetch Twilio and Ultravox configurations for the specific company
+        const twilioConfig = await TwilioConfig.findOne({ 
+            where: { company_id: companyId } 
+        });
+
+        const ultravoxConfig = await UltravoxConfiguration.findOne({ 
+            where: { company_id: companyId } 
+        });
+
+        if (!twilioConfig || !ultravoxConfig) {
+            throw new Error('Configuration not found for the specified company');
+        }
+
+        // Prepare Ultravox Call Configuration
+        const ULTRAVOX_CALL_CONFIG = {
+            systemPrompt: ultravoxConfig.system_prompt,
+            model: ultravoxConfig.model,
+            voice: ultravoxConfig.voice,
+            temperature: 0.3,
+            firstSpeaker: ultravoxConfig.firstspeaker,
+            medium: { "twilio": {} }
+        };
+
+        // Create Ultravox Call
+        const request = https.request(ultravoxConfig.apiurl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': ultravoxConfig.apikey
+            }
+        });
+
+        return new Promise((resolve, reject) => {
+            let data = '';
+
+            request.on('response', (response) => {
+                response.on('data', chunk => data += chunk);
+                response.on('end', () => {
+                    try {
+                        const result = JSON.parse(data);
+                        resolve(result);
+                    } catch (parseError) {
+                        reject(parseError);
+                    }
+                });
+            });
+
+            request.on('error', reject);
+            request.write(JSON.stringify(ULTRAVOX_CALL_CONFIG));
+            request.end();
+        });
+    } catch (error) {
+        console.error('Error creating Ultravox call:', error);
+        throw error;
+    }
+}
+
+
+
 
 // Create a new voice campaign
 router.post('/', async (req, res) => {
@@ -199,24 +272,195 @@ router.post('/:id/start', async (req, res) => {
         const campaignId = req.params.id;
         const companyId = req.query.company_id || (req.user && req.user.company_id);
 
+        console.log('Starting campaign:', { campaignId, companyId });
+
         if (!companyId) {
             return res.status(400).json({ message: 'Company ID is required' });
         }
 
-        const result = await VoiceCampaign.updateStatus(campaignId, 'active', companyId);
-        if (result.affectedRows === 0) {
+        // First check if campaign exists
+        const campaign = await VoiceCampaign.findById(campaignId, companyId);
+        if (!campaign || campaign.length === 0) {
             return res.status(404).json({ message: 'Voice campaign not found' });
         }
 
-        // Fetch updated campaign data
-        const campaign = await VoiceCampaign.findById(campaignId, companyId);
+        // Update campaign status
+        const result = await VoiceCampaign.updateStatus(campaignId, 'active', companyId);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Failed to update campaign status' });
+        }
+
+        console.log('Campaign status updated to active');
+
+        // Fetch pending leads
+        const pendingLeads = await VoiceCampaign.getPendingLeads(campaignId, companyId);
+        console.log('Fetched pending leads:', pendingLeads);
+
+        if (!pendingLeads || pendingLeads.length === 0) {
+            return res.status(400).json({ message: 'No pending leads found for this campaign' });
+        }
+
+        // Send immediate success response
         res.json({ 
             message: 'Campaign started successfully',
-            data: campaign[0]
+            data: campaign[0],
+            pendingLeads: pendingLeads,
+            totalCalls: pendingLeads.length
         });
+
+        // Start making calls in the background
+        // VoiceCampaign.initiateSequentialCalls(campaignId, companyId, pendingLeads)
+        //     .then(callResults => {
+        //         console.log('Calls completed:', callResults);
+        //     })
+        //     .catch(async error => {
+        //         console.error('Error making calls:', error);
+        //         // If calls fail, revert campaign status to draft
+        //         try {
+        //             await VoiceCampaign.updateStatus(campaignId, 'draft', companyId);
+        //             console.log('Campaign status reverted to draft due to call errors');
+        //         } catch (revertError) {
+        //             console.error('Error reverting campaign status:', revertError);
+        //         }
+        //     });
+
+
+        try {
+            // const { 
+            //     companyId, 
+            //     phoneNumbers, 
+            //     twimlUrl = 'http://demo.twilio.com/docs/voice.xml' 
+            // } = req.body;
+    
+            if (!companyId) {
+                return res.status(400).json({ error: 'Company ID is required' });
+            }
+    
+            // if (!phoneNumbers || !Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
+            //     return res.status(400).json({ error: 'Phone numbers array is required and must not be empty' });
+            // }
+    
+            // Fetch Twilio configuration
+            const twilioConfig = await TwilioConfig.findOne({ 
+                where: { company_id: companyId } 
+            });
+    
+            if (!twilioConfig) {
+                return res.status(404).json({ error: 'Twilio configuration not found' });
+            }
+    
+            // Initialize call results tracking
+            const callResults = [];
+            const client = twilio(twilioConfig.account_sid, twilioConfig.auth_token);
+    
+            // Function to initiate a call and process sequentially
+            const initiateSequentialCall = async (index) => {
+                
+                if (index >= pendingLeads.length) {
+                    return callResults;
+                }
+    
+                const phoneNumber = pendingLeads[index];
+                
+                try {
+                    // Create Ultravox Call
+                    const { joinUrl } = await createUltravoxCall(companyId);
+    
+                    // Initiate Twilio Call
+                    const call = await client.calls.create({
+    
+                        twiml: `<Response><Connect><Stream url="${joinUrl}"/></Connect></Response>`,
+                        to: phoneNumber.phone,
+                        from: twilioConfig.phone_number
+    
+                    });
+    
+                    // Track call result
+                    callResults.push({
+                        phoneNumber: phoneNumber.phone,
+                        status: 'initiated',
+                        callSid: call.sid,
+                        joinUrl
+                    });
+    
+                    // Check call status and proceed to next call
+                    return new Promise((resolve, reject) => {
+                        const checkCallStatus = () => {
+                            client.calls(call.sid)
+                                .fetch()
+                                .then((fetchedCall) => {
+                                    if (fetchedCall.status === 'completed') {
+                                        console.log(`Call to ${fetchedCall.to} completed.`);
+                                        callResults[index].status = 'completed';
+                                        resolve(initiateSequentialCall(index + 1));
+                                    } else if (fetchedCall.status === 'busy') {
+                                        console.log(`Call to ${fetchedCall.to} failed, recipient's line is busy.`);
+                                        callResults[index].status = 'busy';
+                                        resolve(initiateSequentialCall(index + 1));
+                                    } else if (fetchedCall.status === 'failed') {
+                                        console.log(`Call to ${fetchedCall.to} failed.`);
+                                        callResults[index].status = 'failed';
+                                        resolve(initiateSequentialCall(index + 1));
+                                    } else if (fetchedCall.status === 'no-answer') {
+                                        console.log(`Call to ${fetchedCall.to} was not answered.`);
+                                        callResults[index].status = 'no-answer';
+                                        resolve(initiateSequentialCall(index + 1));
+                                    } else if (fetchedCall.status === 'cancelled') {
+                                        console.log(`Call to ${fetchedCall.to} was cancelled, possibly hung up.`);
+                                        callResults[index].status = 'cancelled';
+                                        resolve(initiateSequentialCall(index + 1));
+                                    } else {
+                                        console.log(`Call to ${fetchedCall.to} is still in progress...`);
+                                        setTimeout(checkCallStatus, 5000); // Check every 5 seconds
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error(`Error fetching call status: ${error.message}`);
+                                    callResults[index].status = 'error';
+                                    callResults[index].error = error.message;
+                                    resolve(initiateSequentialCall(index + 1));
+                                });
+                        };
+    
+                        setTimeout(checkCallStatus, 5000);
+                    });
+                
+                } catch (callError) {
+                    // Handle call initiation error
+                    callResults.push({
+                        phoneNumber: phoneNumber.phone,
+                        status: 'initiation_error',
+                        error: callError.message
+                    });
+    
+                    return initiateSequentialCall(index + 1);
+                }
+            };
+    
+            // Start sequential call processing
+            await initiateSequentialCall(0);
+    
+            // res.status(200).json({ 
+            //     message: 'Bulk calls processed sequentially', 
+            //     totalCalls: phoneNumbers.length,
+            //     callResults 
+            // });
+    
+        } catch (error) {
+            console.error('Error processing bulk calls:', error);
+            res.status(500).json({ error: error.message });
+        }
+
+
+
+
     } catch (error) {
         console.error('Error starting campaign:', error);
-        res.status(400).json({ message: 'Error starting campaign', error: error.message });
+        res.status(400).json({ 
+            message: 'Error starting campaign', 
+            error: error.message,
+            details: error.stack 
+        });
     }
 });
 
@@ -329,6 +573,34 @@ router.post('/:id/complete', async (req, res) => {
             message: 'Error completing campaign',
             error: error.message
         });
+    }
+});
+
+// Handle Twilio call status callbacks
+router.post('/call-status', async (req, res) => {
+    try {
+        const { CallSid, CallStatus } = req.body;
+        console.log('Received call status update:', { CallSid, CallStatus });
+
+        // Map Twilio status to our status
+        let status = CallStatus.toLowerCase();
+        if (status === 'in-progress') status = 'in_progress';
+        if (status === 'no-answer') status = 'no_answer';
+
+        // Update lead status
+        const [leads] = await db.query(
+            'UPDATE voice_leads SET status = ? WHERE call_sid = ?',
+            [status, CallSid]
+        );
+
+        if (leads.affectedRows === 0) {
+            console.warn('No lead found for call SID:', CallSid);
+        }
+
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('Error handling call status:', error);
+        res.sendStatus(500);
     }
 });
 
