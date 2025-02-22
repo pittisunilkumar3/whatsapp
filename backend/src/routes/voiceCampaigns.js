@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const VoiceCampaign = require('../models/VoiceCampaign');
+const Call = require('../models/Call');
 const twilio = require('twilio');
 const https = require('https');
 
@@ -331,6 +332,25 @@ router.post('/:id/start', async (req, res) => {
                         joinUrl: callDetails.joinUrl
                     });
 
+                    try {
+                        const callData = {
+                            callId: callDetails.callId,
+                            callsid: call.sid,
+                            leadid: phoneNumber.id,
+                            companyid: parseInt(companyId),
+                            campaignId: campaignId,
+                            call_status: 'initiated',
+                            call_duration: 0,
+                            recording_url: callDetails.joinUrl,
+                            call_data: {}
+                        };
+                
+                        await Call.create(callData);
+                    } catch (error) {
+                        console.error('Error creating call:', error);
+                        throw error;
+                    }
+
                     return new Promise((resolve) => {
                         const checkCallStatus = async () => {
                             try {
@@ -542,6 +562,25 @@ router.post('/:id/resume', async (req, res) => {
                         callId: callDetails.callId,
                         joinUrl: callDetails.joinUrl
                     });
+
+                    try {
+                        const callData = {
+                            callId: callDetails.callId,
+                            callsid: call.sid,
+                            leadid: phoneNumber.id,
+                            companyid: parseInt(companyId),
+                            campaignId: campaignId,
+                            call_status: 'initiated',
+                            call_duration: 0,
+                            recording_url: callDetails.joinUrl,
+                            call_data: {}
+                        };
+                
+                        await Call.create(callData);
+                    } catch (error) {
+                        console.error('Error creating call:', error);
+                        throw error;
+                    }
 
                     return new Promise((resolve) => {
                         const checkCallStatus = async () => {
