@@ -40,6 +40,9 @@ const voiceCallRoutes = require('./src/routes/calls');
 const ultravoxConfigurationRoutes = require('./src/routes/ultravoxConfigurationRoutes');
 const ultravoxCallRoutes = require('./src/routes/ultravoxCallRoutes');
 
+
+const companyPermissionRoutes = require('./src/routes/companyPermissionRoutes');
+
 require('dotenv').config();
 
 console.log('Starting server initialization...');
@@ -92,6 +95,9 @@ app.use('/api/voice-calls', voiceCallRoutes);
 
 app.use('/api/ultravox-config', ultravoxConfigurationRoutes);
 app.use('/api/ultravox-calls', ultravoxCallRoutes);
+
+app.use('/api/company-permissions', companyPermissionRoutes);
+
 console.log('API routes setup completed');
 
 // Initialize database and start server

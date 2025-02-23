@@ -264,7 +264,64 @@ export const CompanyAdminDashboard: React.FC = () => {
 					</div>
 				) : (
 					<div className="space-y-4 sm:space-y-6">
-						{/* Add company admin specific content here */}
+						{/* Companies Overview */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-8">
+							{[
+								{ label: 'Total Companies', value: companiesData.total, change: '+8.5%', icon: Building2, color: 'text-blue-600' },
+								{ label: 'Active Companies', value: companiesData.active, change: '+5.2%', icon: Users, color: 'text-green-600' },
+								{ label: 'Pending Approval', value: companiesData.pending, change: '0', icon: Clock, color: 'text-yellow-600' },
+								{ label: 'Suspended', value: companiesData.suspended, change: '-2', icon: AlertCircle, color: 'text-red-600' }
+							].map((metric, index) => (
+								<Card key={index} className="p-4 sm:p-6 hover:shadow-lg transition-all duration-300">
+									<div className="flex justify-between items-start">
+										<div>
+											<p className="text-sm text-secondary-text">{metric.label}</p>
+											<h3 className="text-xl sm:text-2xl font-bold mt-1 sm:mt-2">{metric.value}</h3>
+											<p className={`text-xs sm:text-sm mt-1 sm:mt-2 ${metric.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
+												{metric.change} from last month
+											</p>
+										</div>
+										<metric.icon className={`w-6 h-6 sm:w-8 sm:h-8 ${metric.color}`} />
+									</div>
+								</Card>
+							))}
+						</div>
+
+						{/* Revenue Overview */}
+						<Card className="p-4 sm:p-6 mb-4 sm:mb-8">
+							<div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-4 sm:mb-6">
+								<div>
+									<h2 className="text-lg sm:text-xl font-semibold">Revenue Overview</h2>
+									<p className="text-xs sm:text-sm text-secondary-text mt-1">Monthly revenue breakdown</p>
+								</div>
+								<div className="flex items-center gap-2">
+									<Button variant="ghost" size="sm" className="text-sm">
+										This Month
+									</Button>
+									<Button variant="ghost" size="sm" className="text-sm">
+										Last Month
+									</Button>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+								<div>
+									<p className="text-sm text-secondary-text">Total Revenue</p>
+									<h3 className="text-xl sm:text-2xl font-bold mt-1 sm:mt-2">{additionalMetrics.revenue.total}</h3>
+									<p className="text-xs sm:text-sm text-green-600 mt-1">{additionalMetrics.revenue.growth}</p>
+								</div>
+								<div>
+									<p className="text-sm text-secondary-text">Active Users</p>
+									<h3 className="text-xl sm:text-2xl font-bold mt-1 sm:mt-2">{additionalMetrics.usage.activeUsers}</h3>
+									<p className="text-xs sm:text-sm text-green-600 mt-1">+8.1% from last month</p>
+								</div>
+								<div>
+									<p className="text-sm text-secondary-text">Total Messages</p>
+									<h3 className="text-xl sm:text-2xl font-bold mt-1 sm:mt-2">{additionalMetrics.usage.totalMessages}</h3>
+									<p className="text-xs sm:text-sm text-green-600 mt-1">+12.5% from last month</p>
+								</div>
+							</div>
+						</Card>
 					</div>
 				)}
 			</motion.div>

@@ -149,18 +149,18 @@ export const AppRoutes: React.FC = () => {
                 <Route path="profile" element={<CompanyAdminProfile />} />
                 <Route path="employees" element={<Employees />} />
                 <Route path="addemployee" element={<AddEmployee />} />
-                <Route path="communication" element={<CommunicationHub />} />
+                <Route path="communication/index" element={<CommunicationHub />} />
                 <Route path="communication/voice" element={<Voice />} />
                 <Route path="communication/voice/new-campaign" element={<NewCampaign />} />
                 <Route path="communication/voice/campaigns/:id" element={<VoiceCampaignDetails />} />
                 <Route path="communication/whatsapp" element={<WhatsApp />} />
                 <Route path="communication/sms" element={<SMS />} />
                 <Route path="communication/email" element={<Email />} />
-                <Route path="communication/email-integration" element={<CompanyEmailIntegration />} />
+                <Route path="settings/email-integration" element={<CompanyEmailIntegration />} />
                 <Route path="campaigns" element={<Campaigns />} />
                 <Route path="leads" element={<Leads />} />
                 <Route path="analytics" element={<Analytics />} />
-                <Route path="settings" element={<SettingsPage />} />
+                <Route path="settings/index" element={<SettingsPage />} />
                 <Route path="settings/third-party-url" element={<ThirdPartyUrl />} />
                 <Route path="employee-permissions/:id" element={<EmployeePermissions />} />
                 <Route path="role-management" element={<CompanyRoleManagement />} />
@@ -174,7 +174,7 @@ export const AppRoutes: React.FC = () => {
             <Routes>
                 <Route path="dashboard" element={<EmployeeDashboard />} />
                 <Route path="profile" element={<EmployeeProfile />} />
-                <Route path="communication" element={<CommunicationHub />} />
+                <Route path="communication/index" element={<CommunicationHub />} />
               <Route path="communication/voice" element={<Voice />} />
               <Route path="communication/whatsapp" element={<WhatsApp />} />
               <Route path="communication/sms" element={<SMS />} />

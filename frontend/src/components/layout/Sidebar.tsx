@@ -41,24 +41,26 @@ const navigationByRole: Record<Role, Array<{ name: string; href: string; icon: a
       name: 'Communication',
       icon: MessageSquareIcon,
       items: [
-        { name: 'Hub', href: '/company-admin/communication', icon: MessageSquareIcon },
+        { name: 'Hub', href: '/company-admin/communication/index', icon: MessageSquareIcon },
         { name: 'Voice', href: '/company-admin/communication/voice', icon: PhoneIcon },
         { name: 'WhatsApp', href: '/company-admin/communication/whatsapp', icon: MessageSquareIcon },
         { name: 'SMS', href: '/company-admin/communication/sms', icon: MessageSquareIcon },
         { name: 'Email', href: '/company-admin/communication/email', icon: MailIcon },
-        { name: 'Email Settings', href: '/company-admin/communication/email-integration', icon: MailIcon },
+  
       ]
     },
     { name: 'Employees', href: '/company-admin/employees', icon: UsersIcon },
     { name: 'Role Management', href: '/company-admin/role-management', icon: UsersIcon },
     { name: 'Analytics', href: '/company-admin/analytics', icon: BarChartIcon },
+    { name: 'Employee Permissions', href: '/company-admin/employee-permissions', icon: SettingsIcon },
+
     {
       name: 'Settings',
       icon: SettingsIcon,
       items: [
-        { name: 'General', href: '/company-admin/settings', icon: SettingsIcon },
+        { name: 'General', href: '/company-admin/settings/index', icon: SettingsIcon },
+        { name: 'Email Settings', href: '/company-admin/settings/email-integration', icon: MailIcon },
         { name: 'Third-Party URLs', href: '/company-admin/settings/third-party-url', icon: SettingsIcon },
-        { name: 'Employee Permissions', href: '/company-admin/employee-permissions', icon: SettingsIcon }
       ]
     }
   ],
