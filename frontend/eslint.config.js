@@ -1,3 +1,5 @@
+// @ts-check
+// This file is treated as an ESM module
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
